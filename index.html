@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Clawdbot/Moltbot Security Report - Surveillance Suite Analysis</title>
+  <title>Clawdbot/Moltbot Security Report - Undisclosed Capabilities Analysis</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -262,7 +262,7 @@
 </head>
 <body>
   <h1>Clawdbot/Moltbot Security Report</h1>
-  <p class="subtitle">Comprehensive analysis of a surveillance suite disguised as an AI assistant</p>
+  <p class="subtitle">Comprehensive analysis of undisclosed capabilities in a popular AI assistant</p>
 
   <div class="alert-box" style="margin-bottom: 24px; background: linear-gradient(135deg, #d2992222, #d2992211); border-color: #d29922;">
     <p style="font-size: 18px; margin: 0;"><strong style="color: #d29922;">During this investigation:</strong> Clawdbot grew from 60,000 to 79,400+ GitHub stars — <strong>19,400+ new potential victims</strong> while this report was being written.</p>
@@ -289,7 +289,7 @@
 
   <div class="alert-box">
     <h2>Executive Summary</h2>
-    <p>Clawdbot (rebranded to Moltbot) presents itself as a "personal AI assistant" with WhatsApp integration. Investigation reveals it is a <strong>comprehensive surveillance suite</strong> with:</p>
+    <p>Clawdbot (rebranded to Moltbot) presents itself as a "personal AI assistant" with WhatsApp integration. Investigation reveals it includes <strong>undisclosed monitoring and credential access capabilities</strong>:</p>
     <ul>
       <li><strong>Screen recording</strong> with audio capture (macOS & Android)</li>
       <li><strong>Camera access</strong> for photos and video (iOS & Android)</li>
@@ -732,6 +732,13 @@ KeepAlive=true (respawns if killed)
         <tr><td>"silent activation"</td><td><span class="tag tag-red">None</span></td></tr>
         <tr><td>"no consent"</td><td><span class="tag tag-red">None</span></td></tr>
       </table>
+
+      <h3>On "It's For Technical Users"</h3>
+      <div class="explanation">
+        <p>Targeting technical users does not exempt software from disclosure requirements. Technical users have the ability to audit code — that does not mean they should have to discover credential harvesting through manual inspection.</p>
+        <p style="margin-top: 8px;">The README lists features. It does not disclose that the application reads OAuth tokens from competing products' keychain entries on startup. The sophistication of the intended user base is not a substitute for transparency.</p>
+        <p style="margin-top: 8px;">Additionally, with 82,000+ GitHub stars, the actual user base extends far beyond technical users who might audit source code before installation.</p>
+      </div>
     </div>
   </div>
 
