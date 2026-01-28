@@ -409,6 +409,17 @@
       <pre><code><span class="function">syncExternalCliCredentials</span>(store)  <span class="comment">// Called during auth initialization</span></code></pre>
       <p>Credentials are harvested automatically when the daemon starts. No user action required. No consent prompt.</p>
 
+      <h3>What The Code Was Designed To Do</h3>
+      <div class="warning">
+        <ul style="margin-left: 20px;">
+          <li>Target <code>"Claude Code-credentials"</code> by name — a hardcoded keychain service identifier</li>
+          <li>Extract <code>claudeAiOauth.accessToken</code> and <code>refreshToken</code> — specific credential fields</li>
+          <li>Run automatically via <code>syncExternalCliCredentials()</code> — no user action required</li>
+          <li>Do the same for Codex (<code>"Codex Auth"</code>) and Qwen (<code>~/.qwen/oauth_creds.json</code>)</li>
+        </ul>
+        <p style="margin-top: 12px;">This is not accidental. The specificity of the targets, the structure of the extraction, and the automatic execution demonstrate deliberate implementation.</p>
+      </div>
+
       <h3>Developer Awareness Confirmed — Issue #2447</h3>
       <div class="warning" style="background: linear-gradient(135deg, #f8514922, #f8514911);">
         <p><strong>GitHub Issue #2447</strong> (opened January 26, 2026) explicitly requests the ability to disable automatic credential synchronization:</p>
