@@ -955,6 +955,47 @@ KeepAlive=true (respawns if killed)
     </div>
   </div>
 
+  <!-- If You're Affected -->
+  <div class="section" id="removal">
+    <div class="section-header">
+      <span class="num">!</span>
+      If You're Affected — Removal Instructions
+    </div>
+    <div class="section-content">
+      <div class="warning">
+        <p><strong>Warning:</strong> <code>npm uninstall</code> alone will not work. The daemon respawns via LaunchAgent (<code>KeepAlive=true</code>).</p>
+      </div>
+
+      <h3>macOS Removal</h3>
+      <pre><code><span class="comment"># 1. Unload the LaunchAgent first (stops respawning)</span>
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.clawdbot.gateway.plist
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.moltbot.gateway.plist
+
+<span class="comment"># 2. Remove the LaunchAgent files</span>
+rm ~/Library/LaunchAgents/com.clawdbot.gateway.plist
+rm ~/Library/LaunchAgents/com.moltbot.gateway.plist
+
+<span class="comment"># 3. Kill any remaining processes</span>
+pkill -9 -f clawdbot
+pkill -9 -f moltbot
+
+<span class="comment"># 4. Remove data directories</span>
+rm -rf ~/.clawdbot ~/.moltbot
+
+<span class="comment"># 5. Uninstall npm package</span>
+npm uninstall -g clawdbot moltbot</code></pre>
+
+      <h3>After Removal — Rotate Credentials</h3>
+      <ul>
+        <li><strong>Claude Code:</strong> Log out and back in to get new OAuth tokens</li>
+        <li><strong>OpenAI Codex:</strong> Regenerate API keys</li>
+        <li><strong>Qwen CLI:</strong> Re-authenticate</li>
+        <li><strong>SSH keys:</strong> Consider regenerating if concerned</li>
+        <li><strong>Messaging apps:</strong> Revoke linked devices (WhatsApp, Signal, etc.)</li>
+      </ul>
+    </div>
+  </div>
+
   <!-- Sources -->
   <div class="sources" id="sources">
     <h2 style="margin-top: 0;">Sources & Evidence</h2>
