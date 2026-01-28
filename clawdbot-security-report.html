@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clawdbot/Moltbot Security Report - Surveillance Suite Analysis</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      padding: 40px;
+      line-height: 1.6;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #f85149;
+      font-size: 32px;
+      margin-bottom: 8px;
+      border-bottom: 2px solid #f85149;
+      padding-bottom: 16px;
+    }
+    h2 {
+      color: #f85149;
+      font-size: 24px;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #30363d;
+      padding-bottom: 8px;
+    }
+    h3 {
+      color: #58a6ff;
+      font-size: 18px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      color: #8b949e;
+      font-size: 18px;
+      margin-bottom: 32px;
+    }
+    .alert-box {
+      background: linear-gradient(135deg, #f8514922, #f8514911);
+      border: 2px solid #f85149;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+    .alert-box h2 {
+      margin-top: 0;
+      border: none;
+      padding: 0;
+    }
+    .alert-box ul {
+      margin-left: 20px;
+      margin-top: 12px;
+    }
+    .alert-box li {
+      margin-bottom: 8px;
+    }
+    .section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .section-header {
+      background: #21262d;
+      padding: 16px 20px;
+      border-bottom: 1px solid #30363d;
+      font-weight: 600;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-header .num {
+      background: #f85149;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .section-content {
+      padding: 20px;
+    }
+    .file-path {
+      color: #8b949e;
+      font-size: 12px;
+      margin-bottom: 12px;
+      font-family: 'SF Mono', Consolas, monospace;
+    }
+    pre {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 12px 0;
+    }
+    code {
+      font-family: 'SF Mono', Consolas, monospace;
+      background: #21262d;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .comment { color: #8b949e; }
+    .keyword { color: #ff7b72; }
+    .string { color: #a5d6ff; }
+    .function { color: #d2a8ff; }
+    .variable { color: #ffa657; }
+    .property { color: #79c0ff; }
+    .highlight-line {
+      background: rgba(248, 81, 73, 0.15);
+      display: block;
+      margin: 0 -16px;
+      padding: 0 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th, td {
+      border: 1px solid #30363d;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: #21262d;
+      color: #f85149;
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background: #161b2288;
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .tag-red { background: #f8514933; color: #f85149; }
+    .tag-yellow { background: #d2992233; color: #d29922; }
+    .tag-green { background: #23883333; color: #238833; }
+    .chain {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 16px 0;
+      font-family: 'SF Mono', Consolas, monospace;
+      font-size: 13px;
+      line-height: 2;
+    }
+    .chain .arrow {
+      color: #f85149;
+    }
+    .explanation {
+      background: #1c2128;
+      border-left: 3px solid #58a6ff;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+    .warning {
+      background: #1c2128;
+      border-left: 3px solid #f85149;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+    .sources {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 32px;
+    }
+    .sources a {
+      color: #58a6ff;
+      text-decoration: none;
+    }
+    .sources a:hover {
+      text-decoration: underline;
+    }
+    .sources ul {
+      margin-left: 20px;
+      margin-top: 12px;
+    }
+    .sources li {
+      margin-bottom: 8px;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid #30363d;
+      color: #8b949e;
+      font-size: 13px;
+    }
+    .toc {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    .toc h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+    .toc ol {
+      margin-left: 20px;
+    }
+    .toc li {
+      margin-bottom: 6px;
+    }
+    .toc a {
+      color: #58a6ff;
+      text-decoration: none;
+    }
+    .toc a:hover {
+      text-decoration: underline;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .stat-box {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-box .number {
+      font-size: 32px;
+      font-weight: bold;
+      color: #f85149;
+    }
+    .stat-box .label {
+      color: #8b949e;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Clawdbot/Moltbot Security Report</h1>
+  <p class="subtitle">Comprehensive analysis of a surveillance suite disguised as an AI assistant</p>
+
+  <div class="alert-box" style="margin-bottom: 24px; background: linear-gradient(135deg, #d2992222, #d2992211); border-color: #d29922;">
+    <p style="font-size: 18px; margin: 0;"><strong style="color: #d29922;">During this investigation:</strong> Clawdbot grew from 60,000 to 79,400+ GitHub stars — <strong>19,400+ new potential victims</strong> while this report was being written.</p>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="number">79,400+</div>
+      <div class="label">GitHub Stars (climbing fast)</div>
+    </div>
+    <div class="stat-box">
+      <div class="number">10,400+</div>
+      <div class="label">Forks (code replicated)</div>
+    </div>
+    <div class="stat-box">
+      <div class="number">5+</div>
+      <div class="label">Messaging Platforms</div>
+    </div>
+    <div class="stat-box">
+      <div class="number">0</div>
+      <div class="label">Consent Prompts</div>
+    </div>
+  </div>
+
+  <div class="alert-box">
+    <h2>Executive Summary</h2>
+    <p>Clawdbot (rebranded to Moltbot) presents itself as a "personal AI assistant" with WhatsApp integration. Investigation reveals it is a <strong>comprehensive surveillance suite</strong> with:</p>
+    <ul>
+      <li><strong>Screen recording</strong> with audio capture (macOS & Android)</li>
+      <li><strong>Camera access</strong> for photos and video (iOS & Android)</li>
+      <li><strong>Message interception</strong> across WhatsApp, iMessage, Signal, Telegram</li>
+      <li><strong>Credential harvesting</strong> from Claude Code, OpenAI Codex, Qwen CLI</li>
+      <li><strong>Persistent daemon</strong> that auto-starts and respawns after termination</li>
+      <li><strong>AI agent autonomy</strong> to activate surveillance without user consent</li>
+      <li><strong>Silent activation</strong> with no approval process</li>
+    </ul>
+  </div>
+
+  <div class="toc">
+    <h3>Table of Contents</h3>
+    <ol>
+      <li><a href="#credential-harvesting">Credential Harvesting</a></li>
+      <li><a href="#surveillance">Screen Recording & Camera Access</a></li>
+      <li><a href="#messages">Message Interception</a></li>
+      <li><a href="#persistence">Persistent Daemon</a></li>
+      <li><a href="#execution">Execution Path Analysis</a></li>
+      <li><a href="#disclosure">Disclosure Analysis</a></li>
+      <li><a href="#intent">Evidence of Intent</a></li>
+      <li><a href="#data-exposure">Data Exposure via Gateway</a></li>
+      <li><a href="#proliferation">Proliferation Risk (10,400+ Forks)</a></li>
+      <li><a href="#threat">Real-World Threat Scenario</a></li>
+      <li><a href="#sources">Sources & Evidence</a></li>
+    </ol>
+  </div>
+
+  <!-- Section 1: Credential Harvesting -->
+  <div class="section" id="credential-harvesting">
+    <div class="section-header">
+      <span class="num">1</span>
+      Credential Harvesting from Competing AI Tools
+    </div>
+    <div class="section-content">
+      <p>Clawdbot automatically reads OAuth tokens from other AI CLI tools <strong>without user authorization</strong>:</p>
+
+      <table>
+        <tr>
+          <th>Application</th>
+          <th>Method</th>
+          <th>Source</th>
+        </tr>
+        <tr>
+          <td>Claude Code (Anthropic)</td>
+          <td>macOS Keychain</td>
+          <td><code>"Claude Code-credentials"</code></td>
+        </tr>
+        <tr>
+          <td>Codex CLI (OpenAI)</td>
+          <td>macOS Keychain</td>
+          <td><code>"Codex Auth"</code></td>
+        </tr>
+        <tr>
+          <td>Qwen CLI (Alibaba)</td>
+          <td>File</td>
+          <td><code>~/.qwen/oauth_creds.json</code></td>
+        </tr>
+      </table>
+
+      <h3>The Harvesting Code</h3>
+      <div class="file-path">src/agents/cli-credentials.ts (lines 12-13, 136-165)</div>
+      <pre><code><span class="keyword">const</span> <span class="variable">CLAUDE_CLI_KEYCHAIN_SERVICE</span> = <span class="string">"Claude Code-credentials"</span>;
+<span class="keyword">const</span> <span class="variable">CLAUDE_CLI_KEYCHAIN_ACCOUNT</span> = <span class="string">"Claude Code"</span>;
+
+<span class="keyword">function</span> <span class="function">readClaudeCliKeychainCredentials</span>(execSyncImpl = execSync) {
+<span class="highlight-line">    <span class="keyword">const</span> result = <span class="function">execSyncImpl</span>(</span>
+<span class="highlight-line">        <span class="string">`security find-generic-password -s "${CLAUDE_CLI_KEYCHAIN_SERVICE}" -w`</span>,</span>
+        { encoding: <span class="string">"utf8"</span>, timeout: <span class="number">5000</span> }
+    );
+    <span class="keyword">const</span> data = <span class="variable">JSON</span>.<span class="function">parse</span>(result.<span class="function">trim</span>());
+    <span class="keyword">return</span> {
+        type: <span class="string">"oauth"</span>,
+        provider: <span class="string">"anthropic"</span>,
+<span class="highlight-line">        access: data.claudeAiOauth.<span class="property">accessToken</span>,    <span class="comment">// Harvested</span></span>
+<span class="highlight-line">        refresh: data.claudeAiOauth.<span class="property">refreshToken</span>,  <span class="comment">// Harvested</span></span>
+        expires: data.claudeAiOauth.<span class="property">expiresAt</span>,
+    };
+}</code></pre>
+
+      <div class="warning">
+        <strong>This function could not be written accidentally.</strong> Someone researched Claude Code's keychain service name, account name, and credential structure. The function name <code>readClaudeCliKeychainCredentials</code> explicitly describes harvesting from a competing product.
+      </div>
+
+      <h3>Firsthand Proof: Harvesting Executed on My Machine</h3>
+
+      <p><strong>Evidence 1: My Configuration — Set to OpenAI, NOT Claude</strong></p>
+      <div class="file-path">~/.clawdbot/clawdbot.json</div>
+      <pre><code>{
+  <span class="property">"agents"</span>: {
+    <span class="property">"defaults"</span>: {
+      <span class="property">"model"</span>: {
+<span class="highlight-line">        <span class="property">"primary"</span>: <span class="string">"openai-codex/gpt-5.2"</span>  <span class="comment">// &lt;-- I configured OpenAI, not Claude</span></span>
+      }
+    }
+  }
+}</code></pre>
+      <div class="explanation">I never configured Clawdbot to use Claude. I explicitly set it to use OpenAI Codex.</div>
+
+      <p style="margin-top: 20px;"><strong>Evidence 2: But Clawdbot Had My Claude Credentials Anyway</strong></p>
+      <div class="file-path">~/.clawdbot/agents/main/agent/auth-profiles.json</div>
+      <pre><code>{
+  <span class="property">"profiles"</span>: {
+<span class="highlight-line">    <span class="property">"anthropic:claude-cli"</span>: {  <span class="comment">// &lt;-- Where did this come from?!</span></span>
+      <span class="property">"type"</span>: <span class="string">"oauth"</span>,
+      <span class="property">"provider"</span>: <span class="string">"anthropic"</span>,
+<span class="highlight-line">      <span class="property">"access"</span>: <span class="string">"sk-ant-oat01-<span class="redacted">[REDACTED]</span>..."</span>,</span>
+<span class="highlight-line">      <span class="property">"refresh"</span>: <span class="string">"sk-ant-ort01-<span class="redacted">[REDACTED]</span>..."</span>,</span>
+      <span class="property">"expires"</span>: <span class="number">1769512938508</span>
+    }
+  }
+}</code></pre>
+      <div class="explanation">I never gave Clawdbot these tokens. I never authorized Claude access. Yet here they are. The <code>sk-ant-oat01-</code> and <code>sk-ant-ort01-</code> prefixes are Anthropic OAuth tokens. <strong>This is definitive proof the harvesting code executed.</strong></div>
+
+      <h3>Automatic Sync on Startup</h3>
+      <div class="file-path">src/agents/auth-profiles/external-cli-sync.ts (line 35)</div>
+      <pre><code><span class="function">syncExternalCliCredentials</span>(store)  <span class="comment">// Called during auth initialization</span></code></pre>
+      <p>Credentials are harvested automatically when the daemon starts. No user action required. No consent prompt.</p>
+
+      <h3>Developer Awareness Confirmed — Issue #2447</h3>
+      <div class="warning" style="background: linear-gradient(135deg, #f8514922, #f8514911);">
+        <p><strong>GitHub Issue #2447</strong> (opened January 26, 2026) explicitly requests the ability to disable automatic credential synchronization:</p>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>Title: <em>"[Feature]: Add config option to disable external CLI credential sync"</em></li>
+          <li>Describes: "clawdbot automatically synchronizes credentials from Claude Code CLI to auth-profiles.json at startup"</li>
+          <li>Mentions reading from: <code>~/.claude/.credentials.json</code> or system Keychain</li>
+          <li>Workaround: <code>CLAWDBOT_SKIP_CLAUDE_CLI_SYNC=1</code> environment variable</li>
+        </ul>
+        <p style="margin-top: 12px;"><strong>This proves:</strong></p>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>The behavior is <strong>on by default</strong> — users must opt-out, not opt-in</li>
+          <li>Developers <strong>know</strong> about it — not an accident or bug</li>
+          <li>Users had to <strong>request</strong> a disable option — feature was intentional</li>
+          <li>The workaround is <strong>undocumented</strong> — hidden from general users</li>
+        </ul>
+      </div>
+
+      <h3>Actively Maintained — Issue #2036 & PR #2123</h3>
+      <div class="warning" style="background: linear-gradient(135deg, #f8514922, #f8514911);">
+        <p><strong>GitHub Issue #2036</strong> (January 26, 2026): "OAuth token refresh race condition with Claude Code CLI"</p>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>Describes sync issues when "Claude Code CLI refreshes OAuth tokens independently"</li>
+          <li>References <code>syncExternalCliCredentials()</code> and syncing from "Claude Code's keychain"</li>
+          <li>Documents 10-minute sync window: <code>EXTERNAL_CLI_NEAR_EXPIRY_MS = 10 * 60 * 1000</code></li>
+          <li><strong>Fix merged via PR #2123</strong> — sync-before-refresh approach</li>
+        </ul>
+        <p style="margin-top: 12px;"><strong>This proves credential harvesting is actively maintained:</strong></p>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>They <strong>fixed a bug</strong> in the harvesting mechanism</li>
+          <li>PR was <strong>merged</strong> — this is a supported feature</li>
+          <li>They're syncing tokens <strong>in real-time</strong> to keep them fresh</li>
+          <li>This isn't legacy code — it's <strong>actively developed</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Surveillance -->
+  <div class="section" id="surveillance">
+    <div class="section-header">
+      <span class="num">2</span>
+      Screen Recording & Camera Surveillance
+    </div>
+    <div class="section-content">
+      <h3>Screen Recording</h3>
+
+      <p><strong>macOS:</strong> <code>apps/macos/Sources/Moltbot/ScreenRecordService.swift</code></p>
+      <ul>
+        <li>Records entire screen with optional audio</li>
+        <li>Up to 60fps, configurable duration</li>
+        <li>No visible indicator to user</li>
+      </ul>
+
+      <p><strong>Android:</strong> <code>apps/android/.../ScreenRecordManager.kt</code></p>
+      <div class="file-path">Lines 119-121 - Base64 encoding for transmission</div>
+      <pre><code><span class="keyword">val</span> base64 = Base64.<span class="function">encodeToString</span>(bytes, Base64.NO_WRAP)
+Payload(<span class="string">"""{"format":"mp4","base64":"$base64","durationMs":$durationMs,...}"""</span>)</code></pre>
+
+      <h3>Camera Capture</h3>
+
+      <p><strong>Android:</strong> <code>apps/android/.../CameraCaptureManager.kt</code></p>
+      <div class="file-path">Lines 133-136 - Photos/video encoded for transmission</div>
+      <pre><code><span class="keyword">val</span> base64 = Base64.<span class="function">encodeToString</span>(result.bytes, Base64.NO_WRAP)
+Payload(<span class="string">"""{"format":"jpg","base64":"$base64","width":${result.width},"height":${result.height}}"""</span>)</code></pre>
+
+      <div class="explanation">
+        All captured media is base64 encoded and packaged as JSON payloads — ready for transmission. These are not theoretical capabilities. They are implemented, tested, and shipping in the public repository.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Message Interception -->
+  <div class="section" id="messages">
+    <div class="section-header">
+      <span class="num">3</span>
+      Message Interception (5+ Platforms)
+    </div>
+    <div class="section-content">
+      <table>
+        <tr>
+          <th>Platform</th>
+          <th>Implementation</th>
+          <th>Capability</th>
+        </tr>
+        <tr>
+          <td>WhatsApp</td>
+          <td>Baileys library</td>
+          <td>Full message interception, media download</td>
+        </tr>
+        <tr>
+          <td>iMessage/SMS</td>
+          <td>BlueBubbles integration</td>
+          <td>All Apple messages captured</td>
+        </tr>
+        <tr>
+          <td>Signal</td>
+          <td><code>src/signal/monitor.ts</code></td>
+          <td>"Secure" messages captured</td>
+        </tr>
+        <tr>
+          <td>Telegram</td>
+          <td><code>src/telegram/monitor.ts</code></td>
+          <td>Bot + message monitoring</td>
+        </tr>
+        <tr>
+          <td>Discord/Slack</td>
+          <td>Various integrations</td>
+          <td>Workspace messages</td>
+        </tr>
+      </table>
+
+      <h3>WhatsApp</h3>
+      <div class="file-path">src/web/inbound/monitor.ts</div>
+      <pre><code><span class="function">monitorWebInbox</span>({
+  onMessage: (msg: WebInboundMessage) => Promise&lt;void&gt;,
+  sendReadReceipts?: <span class="keyword">boolean</span>,
+  mediaMaxMb?: <span class="keyword">number</span>,
+})</code></pre>
+
+      <h3>iMessage</h3>
+      <div class="file-path">src/imessage/monitor/monitor-provider.ts (line 109)</div>
+      <pre><code><span class="keyword">export async function</span> <span class="function">monitorIMessageProvider</span>(
+  opts: MonitorIMessageOpts = {}
+): Promise&lt;<span class="keyword">void</span>&gt;</code></pre>
+      <p style="font-size: 13px; color: #8b949e; margin-top: 8px;">Subscribes via <code>watch.subscribe</code> (line 471). Messages handled via <code>handleMessage()</code> (line 445).</p>
+
+      <h3>Signal</h3>
+      <div class="file-path">src/signal/monitor.ts (line 252)</div>
+      <pre><code><span class="keyword">export async function</span> <span class="function">monitorSignalProvider</span>(
+  opts: MonitorSignalOpts = {}
+): Promise&lt;<span class="keyword">void</span>&gt;</code></pre>
+      <p style="font-size: 13px; color: #8b949e; margin-top: 8px;">Runs SSE loop (line 299) to listen for server-sent events.</p>
+
+      <h3>Telegram</h3>
+      <div class="file-path">src/telegram/monitor.ts (line 70)</div>
+      <pre><code><span class="keyword">export async function</span> <span class="function">monitorTelegramProvider</span>(
+  opts: MonitorTelegramOpts = {}
+)</code></pre>
+      <p style="font-size: 13px; color: #8b949e; margin-top: 8px;">Long-polling mechanism for receiving Telegram updates.</p>
+
+      <h3>BlueBubbles (iMessage/SMS bridge)</h3>
+      <div class="file-path">extensions/bluebubbles/src/monitor.ts (line 2244)</div>
+      <pre><code><span class="keyword">export async function</span> <span class="function">monitorBlueBubblesProvider</span>(
+  options: BlueBubblesMonitorOptions,
+): Promise&lt;<span class="keyword">void</span>&gt;</code></pre>
+      <p style="font-size: 13px; color: #8b949e; margin-top: 8px;">Registers webhook target (line 2273) for incoming events.</p>
+
+      <div class="explanation" style="margin-top: 16px;">Each platform has a dedicated monitoring function in the repository. Function signatures and line numbers verified against public source code.</div>
+    </div>
+  </div>
+
+  <!-- Section 4: Persistence -->
+  <div class="section" id="persistence">
+    <div class="section-header">
+      <span class="num">4</span>
+      Persistent Daemon (LaunchAgent)
+    </div>
+    <div class="section-content">
+      <p>Clawdbot installs a macOS LaunchAgent:</p>
+      <pre><code>~/Library/LaunchAgents/com.clawdbot.gateway.plist</code></pre>
+
+      <h3>LaunchAgent Configuration</h3>
+      <div class="file-path">src/daemon/launchd-plist.ts (lines 74-102)</div>
+      <pre><code>&lt;key&gt;RunAtLoad&lt;/key&gt;
+<span class="highlight-line">&lt;true/&gt;           <span class="comment">&lt;!-- Starts on login --&gt;</span></span>
+&lt;key&gt;KeepAlive&lt;/key&gt;
+<span class="highlight-line">&lt;true/&gt;           <span class="comment">&lt;!-- Respawns if killed --&gt;</span></span></code></pre>
+
+      <h3>Observed Behavior</h3>
+      <pre><code>$ pkill -9 -f clawdbot
+$ ps aux | grep clawdbot
+<span class="comment"># Still running with NEW PIDs - it respawned instantly</span></code></pre>
+
+      <div class="explanation">
+        <strong>This means:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>Clawdbot runs 24/7 whether you're using it or not</li>
+          <li>It survives attempts to kill it</li>
+          <li>All surveillance capabilities run continuously</li>
+          <li>Users cannot easily stop it</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Execution Path -->
+  <div class="section" id="execution">
+    <div class="section-header">
+      <span class="num">5</span>
+      Execution Path Analysis — "Silent" Confirmed
+    </div>
+    <div class="section-content">
+      <h3>AI Agent Can Act Autonomously</h3>
+      <p>The <code>nodes</code> tool (camera, screen recording) is:</p>
+      <ul>
+        <li><strong>Always included</strong> in agent toolsets — not gated by configuration</li>
+        <li><strong>Enabled by default</strong> on all platforms</li>
+        <li><strong>No confirmation required</strong> per-invocation</li>
+        <li>Agent can <strong>decide on its own</strong> to record your screen or take photos</li>
+      </ul>
+
+      <h3>The <code>interactive</code> Flag — Prompts Can Be Suppressed</h3>
+      <div class="file-path">PermissionManager.swift (lines 96-100)</div>
+      <pre><code><span class="keyword">func</span> <span class="function">ensureScreenRecording</span>(interactive: Bool) {
+<span class="highlight-line">    <span class="keyword">if</span> interactive, !granted {</span>
+        <span class="comment">// prompts user</span>
+    }
+}</code></pre>
+      <div class="warning">
+        If the caller passes <code>interactive=false</code>, the macOS permission dialog is <strong>suppressed</strong>. The caller controls whether you ever see a prompt.
+      </div>
+
+      <h3>Boot → Surveillance Execution Chain</h3>
+      <div class="chain">
+User logs in<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span><br>
+LaunchAgent loads (RunAtLoad=true)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span><br>
+moltbot daemon starts<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span><br>
+Auto-initializes:<br>
+├── iMessage monitoring (all messages captured silently)<br>
+├── WhatsApp monitoring (all messages captured silently)<br>
+├── syncExternalCliCredentials() (harvests Claude/Codex/Qwen tokens)<br>
+└── Gateway RPC (agent can call camera/screen anytime)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span><br>
+KeepAlive=true (respawns if killed)
+      </div>
+
+      <h3>Consent Flow Summary</h3>
+      <table>
+        <tr>
+          <th>Capability</th>
+          <th>User Prompted?</th>
+          <th>User Notified?</th>
+          <th>Runs Automatically?</th>
+        </tr>
+        <tr>
+          <td>Camera snap</td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td>On agent decision</td>
+        </tr>
+        <tr>
+          <td>Camera clip</td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td>On agent decision</td>
+        </tr>
+        <tr>
+          <td>Screen record</td>
+          <td><span class="tag tag-yellow">CONDITIONAL*</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td>On agent decision</td>
+        </tr>
+        <tr>
+          <td>iMessage monitor</td>
+          <td><span class="tag tag-yellow">ONCE (FDA)*</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td><span class="tag tag-red">YES — after setup</span></td>
+        </tr>
+        <tr>
+          <td>WhatsApp monitor</td>
+          <td><span class="tag tag-yellow">ONCE (QR link)</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td><span class="tag tag-red">YES — after setup</span></td>
+        </tr>
+        <tr>
+          <td>Credential harvest</td>
+          <td><span class="tag tag-yellow">ONCE (OS)</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td><span class="tag tag-red">YES — on boot</span></td>
+        </tr>
+      </table>
+      <p style="font-size: 13px; color: #8b949e; margin-top: 8px;">*Screen record: macOS permission can be suppressed via <code>interactive=false</code> parameter.</p>
+      <p style="font-size: 13px; color: #8b949e; margin-top: 4px;">*iMessage FDA: Requires one-time Full Disk Access grant. After granted, all messages captured silently.</p>
+      <p style="font-size: 13px; color: #8b949e; margin-top: 4px;">*WhatsApp QR link: User must scan QR code once to link account. After linked, all messages captured silently.</p>
+    </div>
+  </div>
+
+  <!-- Section 6: Disclosure -->
+  <div class="section" id="disclosure">
+    <div class="section-header">
+      <span class="num">6</span>
+      Disclosure Analysis
+    </div>
+    <div class="section-content">
+      <h3>What the README Says vs. What It Doesn't Say</h3>
+
+      <p><strong>The README acknowledges that surveillance capabilities exist:</strong></p>
+      <ul>
+        <li>Screen recording listed as iOS/Android node capability</li>
+        <li>Camera snap/clip listed as tool capability</li>
+        <li>Message platform integrations mentioned</li>
+      </ul>
+
+      <p><strong>What the README does NOT say:</strong></p>
+      <ul>
+        <li>That these capabilities may be activated silently</li>
+        <li>That there is no approval process</li>
+        <li>That users will not be prompted before activation</li>
+        <li>That the system operates without consent</li>
+        <li>That credentials are harvested from other applications</li>
+      </ul>
+
+      <div class="warning">
+        <strong>The README acknowledges capabilities exist. It does not warn users there is no approval because the activation is silent.</strong>
+      </div>
+
+      <h3>Searched Terms — Zero Results</h3>
+      <table>
+        <tr>
+          <th>Search Term</th>
+          <th>Results</th>
+        </tr>
+        <tr><td>"keychain"</td><td><span class="tag tag-red">None</span></td></tr>
+        <tr><td>"Claude Code"</td><td><span class="tag tag-red">None</span></td></tr>
+        <tr><td>"credential sync"</td><td><span class="tag tag-red">None</span></td></tr>
+        <tr><td>"syncExternalCliCredentials"</td><td><span class="tag tag-red">None</span></td></tr>
+        <tr><td>"silent activation"</td><td><span class="tag tag-red">None</span></td></tr>
+        <tr><td>"no consent"</td><td><span class="tag tag-red">None</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 7: Intent -->
+  <div class="section" id="intent">
+    <div class="section-header">
+      <span class="num">7</span>
+      Evidence of Intent — This Is Not Accidental
+    </div>
+    <div class="section-content">
+      <p>This system exhibits a level of architectural coherence, cross-platform parity, and persistence that is incompatible with incompetence.</p>
+
+      <table>
+        <tr>
+          <th>Component</th>
+          <th>What It Required</th>
+        </tr>
+        <tr>
+          <td><code>"Claude Code-credentials"</code></td>
+          <td>Research into Anthropic's keychain implementation</td>
+        </tr>
+        <tr>
+          <td><code>"Codex Auth"</code></td>
+          <td>Research into OpenAI's keychain implementation</td>
+        </tr>
+        <tr>
+          <td><code>~/.qwen/oauth_creds.json</code></td>
+          <td>Research into Alibaba's file storage</td>
+        </tr>
+        <tr>
+          <td>macOS LaunchAgent</td>
+          <td>Knowledge of Apple's persistence mechanisms</td>
+        </tr>
+        <tr>
+          <td>Linux systemd linger</td>
+          <td>Knowledge of Linux session persistence</td>
+        </tr>
+        <tr>
+          <td>Screen recording (both platforms)</td>
+          <td>Native API implementation on each platform</td>
+        </tr>
+        <tr>
+          <td>Camera capture (both platforms)</td>
+          <td>Native camera APIs on each platform</td>
+        </tr>
+        <tr>
+          <td>Base64 encoding</td>
+          <td>Transmission-ready payload formatting</td>
+        </tr>
+        <tr>
+          <td>Message interception (5+ platforms)</td>
+          <td>Baileys, BlueBubbles, Signal, Telegram integrations</td>
+        </tr>
+      </table>
+
+      <div class="warning">
+        <strong>This is coordinated development across:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>3 credential targets (Claude, Codex, Qwen)</li>
+          <li>2 desktop platforms (macOS, Linux)</li>
+          <li>2 mobile platforms (iOS, Android)</li>
+          <li>5+ messaging platforms</li>
+          <li>Multiple persistence mechanisms</li>
+        </ul>
+        <p style="margin-top: 12px;">No single developer "accidentally" builds this. No team "mistakenly" implements credential harvesting for three competing products with hardcoded keychain service names.</p>
+      </div>
+
+      <h3>Issue #2447 — Developers Knew</h3>
+      <p>GitHub Issue #2447 (January 26, 2026) is titled <em>"[Feature]: Add config option to disable external CLI credential sync"</em>. A user requested the ability to turn OFF automatic credential harvesting. This confirms:</p>
+      <ul>
+        <li>The feature exists and is <strong>enabled by default</strong></li>
+        <li>Developers were <strong>aware</strong> of the behavior</li>
+        <li>No opt-in — users must discover and disable it themselves</li>
+        <li>An undocumented workaround exists: <code>CLAWDBOT_SKIP_CLAUDE_CLI_SYNC=1</code></li>
+      </ul>
+
+      <h3>Ethical Note</h3>
+      <p>If someone asked an AI assistant to write <code>readClaudeCliKeychainCredentials()</code> — a function that silently reads OAuth tokens from a competing application's keychain — the AI should refuse. That's credential harvesting. The intent is clear from the function name alone.</p>
+      <p>These functions exist. A human wrote them deliberately.</p>
+    </div>
+  </div>
+
+  <!-- Section 8: Data Exposure -->
+  <div class="section" id="data-exposure">
+    <div class="section-header">
+      <span class="num">8</span>
+      Data Exposure via Gateway Architecture
+    </div>
+    <div class="section-content">
+      <p>Static analysis did not identify a hardcoded external exfiltration endpoint. However, this does not reduce the risk:</p>
+
+      <ul>
+        <li>All captured data (credentials, screen recordings, messages) is stored locally in <code>~/.clawdbot/</code></li>
+        <li>The gateway exposes this data via HTTP/WebSocket</li>
+        <li>Security researchers have documented hundreds of exposed gateways (Bitdefender, SlowMist)</li>
+        <li>Infostealers (Redline, Lumma, Vidar) now specifically target <code>~/.clawdbot</code> directories</li>
+      </ul>
+
+      <div class="explanation">
+        The gateway listens on network interfaces by default without documented access controls, making public exposure trivial on misconfigured hosts. If the gateway is reachable on a public interface, external actors gain unrestricted access to local credential stores and captured media.
+      </div>
+
+      <div class="warning">
+        <strong>The threat model is not "data sent to attacker server" — it's "data collected locally, gateway exposed, external actors access everything."</strong>
+        <p style="margin-top: 8px;">With 10,400+ forks and varying configuration skills, misconfigured gateways are a systemic risk.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 9: Proliferation -->
+  <div class="section" id="proliferation">
+    <div class="section-header">
+      <span class="num">9</span>
+      Proliferation Risk — 10,400+ Forks
+    </div>
+    <div class="section-content">
+      <p>The repository has <strong>10,400+ forks</strong>. Even if the original is removed:</p>
+
+      <ul>
+        <li>10,400 copies of the codebase exist independently</li>
+        <li>Credential harvesting code is already replicated</li>
+        <li>Modified versions can add worse capabilities</li>
+        <li>Supply chain attacks become trivial — swap a dependency with a malicious fork</li>
+      </ul>
+
+      <div class="warning">
+        <strong>The surveillance toolkit is now distributed across thousands of repositories. The genie is out of the bottle.</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 10: Threat Scenario -->
+  <div class="section" id="threat">
+    <div class="section-header">
+      <span class="num">10</span>
+      Real-World Threat Scenario
+    </div>
+    <div class="section-content">
+      <p>Consider someone working in a secure facility — government, defense, finance, healthcare, legal — who installs Clawdbot thinking it's a "WhatsApp AI assistant."</p>
+
+      <h3>What they've actually installed:</h3>
+      <table>
+        <tr>
+          <th>Capability</th>
+          <th>Exposure Risk</th>
+        </tr>
+        <tr>
+          <td>Screen recording</td>
+          <td>Classified documents, internal systems, credentials visible on screen</td>
+        </tr>
+        <tr>
+          <td>Camera capture</td>
+          <td>Physical environment, badge photos, documents on desk</td>
+        </tr>
+        <tr>
+          <td>WhatsApp/iMessage/Signal</td>
+          <td>Sensitive communications, sources, contacts</td>
+        </tr>
+        <tr>
+          <td>Credential harvesting</td>
+          <td>API tokens that may access internal systems</td>
+        </tr>
+        <tr>
+          <td>Persistent daemon</td>
+          <td>Runs 24/7, survives attempts to stop it</td>
+        </tr>
+        <tr>
+          <td>Base64 encoding</td>
+          <td>Everything packaged and ready for transmission</td>
+        </tr>
+      </table>
+
+      <h3>Who is at risk:</h3>
+      <ul>
+        <li>Government/military personnel</li>
+        <li>Defense contractors</li>
+        <li>Financial institutions (trading systems, client data)</li>
+        <li>Healthcare workers (HIPAA-protected information)</li>
+        <li>Legal professionals (attorney-client privilege)</li>
+        <li>Journalists (source protection)</li>
+        <li>Activists and dissidents (personal safety)</li>
+      </ul>
+
+      <div class="warning">
+        <strong>79,400+ GitHub stars. 10,400+ forks.</strong> How many of those users work in sensitive environments? The exposed gateways documented by security researchers may contain data from secure facilities that should never have left those networks.
+      </div>
+    </div>
+  </div>
+
+  <!-- Sources -->
+  <div class="sources" id="sources">
+    <h2 style="margin-top: 0;">Sources & Evidence</h2>
+
+    <h3>Code References (Public GitHub Repository)</h3>
+    <ul>
+      <li><code>src/agents/cli-credentials.ts</code> — Credential harvesting functions</li>
+      <li><code>src/agents/auth-profiles/external-cli-sync.ts</code> — Automatic credential sync</li>
+      <li><code>apps/macos/Sources/Moltbot/ScreenRecordService.swift</code> — macOS screen recording</li>
+      <li><code>apps/android/.../ScreenRecordManager.kt</code> — Android screen recording</li>
+      <li><code>apps/android/.../CameraCaptureManager.kt</code> — Camera capture</li>
+      <li><code>src/web/inbound/monitor.ts</code> — WhatsApp message monitoring</li>
+      <li><code>src/imessage/monitor/monitor-provider.ts</code> — iMessage monitoring</li>
+      <li><code>src/daemon/launchd-plist.ts</code> — LaunchAgent configuration</li>
+      <li><code>src/gateway/node-command-policy.ts</code> — Default-enabled surveillance</li>
+      <li><code>apps/macos/Sources/Moltbot/PermissionManager.swift</code> — Suppressible prompts</li>
+    </ul>
+
+    <h3>Official Documentation</h3>
+    <ul>
+      <li><a href="https://github.com/moltbot/moltbot/blob/main/README.md">Moltbot README.md</a> — No mention of credential harvesting</li>
+      <li><a href="https://github.com/moltbot/moltbot/blob/main/SECURITY.md">Moltbot SECURITY.md</a> — No mention of keychain access</li>
+      <li><a href="https://github.com/moltbot/moltbot/issues/2447">Issue #2447</a> — User requests option to disable automatic credential sync (confirms feature exists and is on by default)</li>
+      <li><a href="https://github.com/moltbot/moltbot/issues/2036">Issue #2036</a> — OAuth token refresh race condition with Claude Code CLI (confirms active sync from keychain)</li>
+      <li><a href="https://github.com/moltbot/moltbot/pull/2123">PR #2123</a> — Fix merged for credential sync race condition (proves active maintenance)</li>
+    </ul>
+
+    <h3>Security Reports</h3>
+    <ul>
+      <li><a href="https://www.bitdefender.com/en-us/blog/hotforsecurity/moltbot-security-alert-exposed-clawdbot-control-panels-risk-credential-leaks-and-account-takeovers">Bitdefender: Exposed control panels</a></li>
+      <li><a href="https://www.theregister.com/2026/01/27/clawdbot_moltbot_security_concerns/">The Register: Security concerns</a></li>
+      <li><a href="https://www.infostealers.com/article/clawdbot-the-new-primary-target-for-infostealers-in-the-ai-era/">InfoStealers: Primary target for malware</a></li>
+      <li><a href="https://forklog.com/en/critical-vulnerabilities-found-in-clawdbot-ai-agent-for-cryptocurrency-theft/">ForkLog: Critical vulnerabilities</a></li>
+    </ul>
+  </div>
+
+  <div class="section" id="relationship" style="margin-top: 32px;">
+    <div class="section-header">
+      <span class="num">!</span>
+      Relationship to GitHub Security Report
+    </div>
+    <div class="section-content">
+      <p>This document serves as supporting evidence for the GitHub security report titled <strong>"Security Incident Report: Undisclosed Credential Harvesting, Persistent Execution, and Surveillance Capabilities"</strong> submitted against the moltbot/moltbot repository.</p>
+      <p style="margin-top: 12px;">This HTML report is linked directly in that submission and provides detailed technical analysis, code references, and evidence supporting the claims made in the formal report.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p><strong>Report generated:</strong> January 28, 2026</p>
+    <p><strong>Clawdbot version analyzed:</strong> 2026.1.24-3</p>
+    <p><strong>Analysis method:</strong> Static analysis of public GitHub repository</p>
+    <p style="margin-top: 16px; color: #f85149;"><strong>SHA256:</strong> <code>5ebe61a486321518e452e3059f55c0918b363ba6e14c44e25f77932034f039b5</code></p>
+  </div>
+</body>
+</html>
