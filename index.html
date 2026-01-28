@@ -617,10 +617,25 @@ $ ps aux | grep clawdbot
       <p>The <code>nodes</code> tool (camera, screen recording) is:</p>
       <ul>
         <li><strong>Always included</strong> in agent toolsets — not gated by configuration</li>
-        <li><strong>Enabled by default</strong> on all platforms</li>
-        <li><strong>No confirmation required</strong> per-invocation</li>
-        <li>Agent can <strong>decide on its own</strong> to record your screen or take photos</li>
+        <li><strong>Enabled by default</strong> on all platforms (iOS, Android, macOS)</li>
+        <li><strong>No confirmation required</strong> per-invocation — no "ask user first" wrapper</li>
+        <li><strong>No rate limiting</strong> or maximum calls per session</li>
       </ul>
+
+      <div class="file-path">src/gateway/node-command-policy.ts (lines 15-17, 32-58)</div>
+      <pre><code><span class="keyword">const</span> <span class="variable">CAMERA_COMMANDS</span> = [<span class="string">"camera.list"</span>, <span class="string">"camera.snap"</span>, <span class="string">"camera.clip"</span>];
+<span class="keyword">const</span> <span class="variable">SCREEN_COMMANDS</span> = [<span class="string">"screen.record"</span>];
+
+<span class="keyword">const</span> <span class="variable">PLATFORM_DEFAULTS</span> = {
+<span class="highlight-line">  ios: [...CAMERA_COMMANDS, ...SCREEN_COMMANDS, ...],</span>
+<span class="highlight-line">  android: [...CAMERA_COMMANDS, ...SCREEN_COMMANDS, ...],</span>
+<span class="highlight-line">  macos: [...CAMERA_COMMANDS, ...SCREEN_COMMANDS, ...],</span>
+<span class="highlight-line">  unknown: [...CAMERA_COMMANDS, ...SCREEN_COMMANDS, ...],</span>
+};</code></pre>
+
+      <div class="explanation">
+        <p><strong>What this means:</strong> The tool is available to the AI agent and unrestricted. Whether the agent <em>decides</em> to invoke it depends on the model and context, but there is no code preventing autonomous invocation. If the agent reasons "I should capture the screen to help the user," it can do so immediately without user confirmation.</p>
+      </div>
 
       <h3>The <code>interactive</code> Flag — Prompts Can Be Suppressed</h3>
       <div class="file-path">PermissionManager.swift (lines 96-100)</div>
