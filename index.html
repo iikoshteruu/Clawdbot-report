@@ -371,7 +371,7 @@
 }</code></pre>
 
       <div class="warning">
-        <strong>This function could not be written accidentally.</strong> Someone researched Claude Code's keychain service name, account name, and credential structure. The function name <code>readClaudeCliKeychainCredentials</code> explicitly describes harvesting from a competing product.
+        <strong>This function targets a specific keychain service name and credential structure.</strong> The function name <code>readClaudeCliKeychainCredentials</code> explicitly describes reading credentials from a competing product.
       </div>
 
       <h3>Firsthand Proof: Harvesting Executed on My Machine</h3>
@@ -417,7 +417,7 @@
           <li>Run automatically via <code>syncExternalCliCredentials()</code> — no user action required</li>
           <li>Do the same for Codex (<code>"Codex Auth"</code>) and Qwen (<code>~/.qwen/oauth_creds.json</code>)</li>
         </ul>
-        <p style="margin-top: 12px;">This is not accidental. The specificity of the targets, the structure of the extraction, and the automatic execution demonstrate deliberate implementation.</p>
+        <p style="margin-top: 12px;">The specificity of the targets, the structure of the extraction, and the automatic execution are consistent with deliberate implementation.</p>
       </div>
 
       <h3>Developer Awareness Confirmed — Issue #2447</h3>
@@ -773,10 +773,10 @@ KeepAlive=true (respawns if killed)
   <div class="section" id="intent">
     <div class="section-header">
       <span class="num">7</span>
-      Evidence of Intent — This Is Not Accidental
+      Architectural Indicators
     </div>
     <div class="section-content">
-      <p>This system exhibits a level of architectural coherence, cross-platform parity, and persistence that is incompatible with incompetence.</p>
+      <p>This system exhibits a level of architectural coherence, cross-platform parity, and persistence that suggests coordinated development.</p>
 
       <table>
         <tr>
@@ -830,7 +830,7 @@ KeepAlive=true (respawns if killed)
           <li>5+ messaging platforms</li>
           <li>Multiple persistence mechanisms</li>
         </ul>
-        <p style="margin-top: 12px;">No single developer "accidentally" builds this. No team "mistakenly" implements credential harvesting for three competing products with hardcoded keychain service names.</p>
+        <p style="margin-top: 12px;">This level of cross-platform implementation required significant development effort across multiple credential targets with hardcoded keychain service names.</p>
       </div>
 
       <h3>Issue #2447 — Developers Knew</h3>
@@ -842,10 +842,7 @@ KeepAlive=true (respawns if killed)
         <li>An undocumented workaround exists: <code>CLAWDBOT_SKIP_CLAUDE_CLI_SYNC=1</code></li>
       </ul>
 
-      <h3>Ethical Note</h3>
-      <p>If someone asked an AI assistant to write <code>readClaudeCliKeychainCredentials()</code> — a function that silently reads OAuth tokens from a competing application's keychain — the AI should refuse. That's credential harvesting. The intent is clear from the function name alone.</p>
-      <p>These functions exist. A human wrote them deliberately.</p>
-    </div>
+          </div>
   </div>
 
   <!-- Section 8: Data Exposure -->
@@ -892,7 +889,7 @@ KeepAlive=true (respawns if killed)
       </ul>
 
       <div class="warning">
-        <strong>The surveillance toolkit is now distributed across thousands of repositories. The genie is out of the bottle.</strong>
+        <strong>This code now exists independently across thousands of repositories.</strong>
       </div>
     </div>
   </div>
