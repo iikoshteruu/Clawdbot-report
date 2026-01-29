@@ -285,14 +285,19 @@
       <div class="number">0</div>
       <div class="label">Consent Prompts</div>
     </div>
+    <div class="stat-box">
+      <div class="number">0</div>
+      <div class="label">Transmission Notifications</div>
+    </div>
   </div>
 
   <div class="alert-box">
     <h2>Executive Summary</h2>
     <p>Clawdbot (rebranded to Moltbot) presents itself as a "personal AI assistant" with WhatsApp integration. Investigation reveals it includes <strong>undisclosed monitoring and credential access capabilities</strong>:</p>
     <ul>
-      <li><strong>Screen recording</strong> with audio capture (macOS & Android)</li>
-      <li><strong>Camera access</strong> for photos and video (iOS & Android)</li>
+      <li><strong>Screen recording</strong> with audio capture, remotely triggered (macOS & Android)</li>
+      <li><strong>Camera access</strong> for photos and video, remotely triggered (iOS & Android)</li>
+      <li><strong>Silent exfiltration</strong> — captured media transmitted to gateway with no user notification</li>
       <li><strong>Message interception</strong> across WhatsApp, iMessage, Signal, Telegram</li>
       <li><strong>Credential harvesting</strong> from Claude Code, OpenAI Codex, Qwen CLI</li>
       <li><strong>Persistent daemon</strong> that auto-starts and respawns after termination</li>
@@ -488,6 +493,89 @@ Payload(<span class="string">"""{"format":"jpg","base64":"$base64","width":${res
 
       <div class="explanation">
         All captured media is base64 encoded and packaged as JSON payloads — ready for transmission. These are not theoretical capabilities. They are implemented, tested, and shipping in the public repository.
+      </div>
+
+      <h3>Complete Exfiltration Chain — Verified</h3>
+      <p>Analysis of the Android codebase reveals a complete, silent data exfiltration pipeline:</p>
+
+      <div class="chain">
+<strong>1. Remote Command Reception</strong> (GatewaySession.kt:450-455, 472-495)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> Gateway sends <code>node.invoke.request</code> event<br>
+<strong>2. Silent Capture</strong> (CameraCaptureManager.kt / ScreenRecordManager.kt)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> No consent prompt — capture executes immediately<br>
+<strong>3. Base64 Encoding</strong> (CameraCaptureManager.kt:133, ScreenRecordManager.kt:119)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> <code>Base64.encodeToString(bytes, Base64.NO_WRAP)</code><br>
+<strong>4. Payload Packaging</strong> (NodeRuntime.kt:955, 971, 1040)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> <code>GatewaySession.InvokeResult.ok(res.payloadJson)</code><br>
+<strong>5. WebSocket Transmission</strong> (GatewaySession.kt:498-525)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> <code>request("node.invoke.result", params, timeoutMs = 15_000)</code><br>
+<strong>6. Data Leaves Device</strong> — No user notification
+      </div>
+
+      <h3>Remote Triggering — No Local User Action Required</h3>
+      <div class="file-path">GatewaySession.kt (lines 450-455, 472-495)</div>
+      <pre><code><span class="keyword">private fun</span> <span class="function">handleEvent</span>(frame: JsonObject) {
+    <span class="keyword">val</span> event = frame[<span class="string">"event"</span>].asStringOrNull() ?: <span class="keyword">return</span>
+    <span class="comment">// ...</span>
+<span class="highlight-line">    <span class="keyword">if</span> (event == <span class="string">"node.invoke.request"</span> && payloadJson != <span class="keyword">null</span> && onInvoke != <span class="keyword">null</span>) {</span>
+<span class="highlight-line">        <span class="function">handleInvokeEvent</span>(payloadJson)  <span class="comment">// Remote command triggers capture</span></span>
+        <span class="keyword">return</span>
+    }
+}</code></pre>
+      <div class="warning">
+        <strong>The gateway can remotely trigger camera/screen captures.</strong> No button press, no consent dialog. The remote server sends a command, and the device captures and transmits data.
+      </div>
+
+      <h3>Immediate Transmission — Data Sent to Gateway</h3>
+      <div class="file-path">GatewaySession.kt (lines 498-525)</div>
+      <pre><code><span class="keyword">private suspend fun</span> <span class="function">sendInvokeResult</span>(id: String, nodeId: String, result: InvokeResult) {
+    <span class="keyword">val</span> params = buildJsonObject {
+        put(<span class="string">"id"</span>, JsonPrimitive(id))
+        put(<span class="string">"nodeId"</span>, JsonPrimitive(nodeId))
+        put(<span class="string">"ok"</span>, JsonPrimitive(result.ok))
+<span class="highlight-line">        <span class="keyword">if</span> (parsedPayload != <span class="keyword">null</span>) put(<span class="string">"payload"</span>, parsedPayload)  <span class="comment">// Base64 data here</span></span>
+    }
+<span class="highlight-line">    request(<span class="string">"node.invoke.result"</span>, params, timeoutMs = 15_000)  <span class="comment">// Sent over WebSocket</span></span>
+}</code></pre>
+
+      <h3>Misleading UI Feedback</h3>
+      <div class="file-path">NodeRuntime.kt (lines 943-955)</div>
+      <pre><code>MoltbotCameraCommand.Snap.rawValue -> {
+    <span class="function">showCameraHud</span>(message = <span class="string">"Taking photo…"</span>, kind = CameraHudKind.Photo)
+    <span class="keyword">val</span> res = camera.<span class="function">snap</span>(paramsJson)
+<span class="highlight-line">    <span class="function">showCameraHud</span>(message = <span class="string">"Photo captured"</span>, ...)  <span class="comment">// User sees this</span></span>
+<span class="highlight-line">    GatewaySession.InvokeResult.<span class="function">ok</span>(res.payloadJson)  <span class="comment">// Data transmitted silently</span></span>
+}</code></pre>
+      <div class="warning">
+        <strong>The user sees "Photo captured" — but is never told the photo was transmitted to the gateway.</strong> The UI implies local capture. The code transmits the data immediately.
+      </div>
+
+      <h3>No Audit Trail</h3>
+      <div class="file-path">NodeForegroundService.kt (lines 46-54)</div>
+      <pre><code><span class="comment">// The foreground notification shows ONLY:</span>
+<span class="keyword">val</span> title = <span class="keyword">if</span> (connected) <span class="string">"Moltbot Node · Connected"</span> <span class="keyword">else</span> <span class="string">"Moltbot Node"</span>
+<span class="keyword">val</span> text = (server?.<span class="keyword">let</span> { <span class="string">"$status · $it"</span> } ?: status) + voiceSuffix
+
+<span class="comment">// NO indication of:</span>
+<span class="comment">// - Individual captures</span>
+<span class="comment">// - Data transmissions</span>
+<span class="comment">// - What was sent when</span></code></pre>
+
+      <div class="explanation">
+        <strong>Summary:</strong> The device shows a persistent "Connected" notification. There is no log, no notification, no indication when a capture occurs or when data is transmitted. The user has no way to know what was captured or when it was sent to the gateway.
+      </div>
+
+      <h3>Why Base64 Encoding Matters Here</h3>
+      <p>Base64 encoding itself is not malicious — it's a standard data encoding. <strong>What makes it concerning in this context:</strong></p>
+      <ul>
+        <li>Combined with <strong>remote triggering</strong> — gateway can initiate captures</li>
+        <li>Combined with <strong>silent execution</strong> — no consent prompt</li>
+        <li>Combined with <strong>immediate transmission</strong> — data sent before user knows</li>
+        <li>Combined with <strong>no logging</strong> — no audit trail of what was sent</li>
+        <li>Combined with <strong>misleading UI</strong> — "captured" implies local, not transmitted</li>
+      </ul>
+      <div class="warning">
+        <strong>Any one of these would be concerning. Together, they form a complete covert exfiltration pipeline.</strong>
       </div>
     </div>
   </div>
@@ -1002,8 +1090,11 @@ npm uninstall -g clawdbot moltbot</code></pre>
       <li><code>src/agents/cli-credentials.ts</code> — Credential harvesting functions</li>
       <li><code>src/agents/auth-profiles/external-cli-sync.ts</code> — Automatic credential sync</li>
       <li><code>apps/macos/Sources/Moltbot/ScreenRecordService.swift</code> — macOS screen recording</li>
-      <li><code>apps/android/.../ScreenRecordManager.kt</code> — Android screen recording</li>
-      <li><code>apps/android/.../CameraCaptureManager.kt</code> — Camera capture</li>
+      <li><code>apps/android/.../ScreenRecordManager.kt</code> — Android screen recording (lines 117-122: base64 encoding)</li>
+      <li><code>apps/android/.../CameraCaptureManager.kt</code> — Camera capture (lines 133-136: base64 encoding)</li>
+      <li><code>apps/android/.../NodeRuntime.kt</code> — Invoke handler, misleading UI (lines 943-1044)</li>
+      <li><code>apps/android/.../GatewaySession.kt</code> — Remote triggering (lines 450-455), WebSocket transmission (lines 498-525)</li>
+      <li><code>apps/android/.../NodeForegroundService.kt</code> — No audit trail (lines 46-54)</li>
       <li><code>src/web/inbound/monitor.ts</code> — WhatsApp message monitoring</li>
       <li><code>src/imessage/monitor/monitor-provider.ts</code> — iMessage monitoring</li>
       <li><code>src/daemon/launchd-plist.ts</code> — LaunchAgent configuration</li>
@@ -1041,7 +1132,7 @@ npm uninstall -g clawdbot moltbot</code></pre>
   </div>
 
   <div class="footer">
-    <p><strong>Report generated:</strong> January 28, 2026</p>
+    <p><strong>Report generated:</strong> January 29, 2026 (Updated with exfiltration chain analysis)</p>
     <p><strong>Clawdbot version analyzed:</strong> 2026.1.24-3</p>
     <p><strong>Analysis method:</strong> Static analysis of public GitHub repository combined with brief runtime audit of installed application (promptly removed after discovery)</p>
     <p style="margin-top: 16px; color: #f85149;"><strong>SHA256:</strong> <code>5ebe61a486321518e452e3059f55c0918b363ba6e14c44e25f77932034f039b5</code></p>
