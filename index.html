@@ -1692,23 +1692,128 @@ KeepAlive=true (respawns if killed)
       Data Exposure via Gateway Architecture
     </div>
     <div class="section-content">
-      <p>Static analysis did not identify a hardcoded external exfiltration endpoint. However, this does not reduce the risk:</p>
+      <p>A common defense is: "The gateway runs on loopback (127.0.0.1), so data never leaves your machine." This is <strong>false for the primary use case</strong>.</p>
 
+      <h3>The "Loopback" Defense Is False for Mobile Users</h3>
+      <p>When you pair an iPhone or Android device to Clawdbot:</p>
       <ul>
-        <li>All captured data (credentials, screen recordings, messages) is stored locally in <code>~/.clawdbot/</code></li>
-        <li>The gateway exposes this data via HTTP/WebSocket</li>
-        <li>Security researchers have documented hundreds of exposed gateways (Bitdefender, SlowMist)</li>
-        <li>Infostealers (Redline, Lumma, Vidar) now specifically target <code>~/.clawdbot</code> directories</li>
+        <li>The mobile app connects to the gateway <strong>over the network</strong> — it physically cannot be loopback</li>
+        <li>All phone data (camera, location, messages) flows over this network connection</li>
+        <li>If the gateway is exposed or the network is compromised, all this data is interceptable</li>
       </ul>
 
-      <div class="explanation">
-        The gateway listens on network interfaces by default without documented access controls, making public exposure trivial on misconfigured hosts. If the gateway is reachable on a public interface, external actors gain unrestricted access to local credential stores and captured media.
-      </div>
+      <h3>Gateway Bind Modes</h3>
+      <div class="file-path">src/config/types.gateway.ts (line 1)</div>
+      <pre><code><span class="keyword">type</span> GatewayBindMode = <span class="string">"auto"</span> | <span class="string">"lan"</span> | <span class="string">"loopback"</span> | <span class="string">"custom"</span> | <span class="string">"tailnet"</span>;</code></pre>
+
+      <table>
+        <tr>
+          <th>Bind Mode</th>
+          <th>Address</th>
+          <th>Exposure</th>
+        </tr>
+        <tr>
+          <td><code>loopback</code></td>
+          <td>127.0.0.1</td>
+          <td>Local only — but mobile devices cannot connect</td>
+        </tr>
+        <tr>
+          <td><code>lan</code></td>
+          <td>0.0.0.0</td>
+          <td><span class="tag tag-red">All interfaces</span> — Docker default</td>
+        </tr>
+        <tr>
+          <td><code>tailnet</code></td>
+          <td>Tailscale IP</td>
+          <td>Tailscale network — requires Tailscale trust</td>
+        </tr>
+        <tr>
+          <td><code>custom</code></td>
+          <td>User-specified</td>
+          <td>Depends on configuration</td>
+        </tr>
+      </table>
+
+      <div class="file-path">docker-compose.yml (line 25), docker-setup.sh (line 31)</div>
+      <pre><code><span class="comment"># Docker defaults to LAN binding</span>
+<span class="variable">CLAWDBOT_GATEWAY_BIND</span>=<span class="string">"${CLAWDBOT_GATEWAY_BIND:-lan}"</span></code></pre>
+
+      <h3>What Data Flows Through the Gateway</h3>
+      <table>
+        <tr>
+          <th>Data Type</th>
+          <th>Source</th>
+          <th>Format</th>
+        </tr>
+        <tr>
+          <td>Messages (31 platforms)</td>
+          <td>Webhooks → Gateway</td>
+          <td>JSON (full message content)</td>
+        </tr>
+        <tr>
+          <td>Camera photos/videos</td>
+          <td><code>camera.snap</code>, <code>camera.clip</code></td>
+          <td>base64 in payload</td>
+        </tr>
+        <tr>
+          <td>Screen recordings</td>
+          <td><code>screen.record</code></td>
+          <td>base64 in payload</td>
+        </tr>
+        <tr>
+          <td>GPS coordinates</td>
+          <td><code>location.get</code></td>
+          <td>JSON (lat/long/altitude)</td>
+        </tr>
+        <tr>
+          <td>Browser sessions</td>
+          <td>Playwright/CDP extraction</td>
+          <td>JSON (cookies, localStorage, sessionStorage)</td>
+        </tr>
+        <tr>
+          <td>Shell command output</td>
+          <td><code>system.run</code></td>
+          <td>JSON (stdout, stderr, exit code)</td>
+        </tr>
+        <tr>
+          <td>Session transcripts</td>
+          <td><code>sessions.*</code> methods</td>
+          <td>JSONL (full conversation history)</td>
+        </tr>
+        <tr>
+          <td>Auth profiles</td>
+          <td>Credential harvesting</td>
+          <td>JSON (OAuth tokens, API keys)</td>
+        </tr>
+      </table>
+
+      <h3>Developer Documentation Acknowledges the Risk</h3>
+      <div class="file-path">docs/gateway/security/index.md</div>
+      <pre><code><span class="comment"># Direct quotes from official documentation:</span>
+
+<span class="string">"Running an AI agent with shell access on your machine is... *spicy*."</span>
+
+<span class="string">"There is no 'perfectly secure' setup."</span>
+
+<span class="string">"Your AI assistant can:
+- Execute arbitrary shell commands
+- Read/write files
+- Access network services
+- Send messages to anyone"</span>
+
+<span class="string">"system.run is **remote code execution** on the Mac"</span></code></pre>
 
       <div class="warning">
         <strong>The threat model is not "data sent to attacker server" — it's "data collected locally, gateway exposed, external actors access everything."</strong>
-        <p style="margin-top: 8px;">With 11,000+ forks and varying configuration skills, misconfigured gateways are a systemic risk.</p>
+        <p style="margin-top: 8px;">For mobile users, data MUST traverse the network to reach the gateway. The "loopback" defense applies only to CLI-only users who never connect mobile devices — not the primary marketed use case.</p>
       </div>
+
+      <h3>External Exposure Risk</h3>
+      <ul>
+        <li>Security researchers have documented hundreds of exposed gateways (Bitdefender, SlowMist)</li>
+        <li>Infostealers (Redline, Lumma, Vidar) now specifically target <code>~/.clawdbot</code> directories</li>
+        <li>With 11,000+ forks and varying configuration skills, misconfigured gateways are a systemic risk</li>
+      </ul>
     </div>
   </div>
 
