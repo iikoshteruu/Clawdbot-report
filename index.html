@@ -327,7 +327,7 @@
   <div class="toc">
     <h3>Table of Contents</h3>
     <ol>
-      <li><a href="#credential-harvesting">Credential Harvesting & SSH Enumeration</a></li>
+      <li><a href="#credential-harvesting">Credential Harvesting & SSH Enumeration</a> (includes <a href="#dynamic-analysis">Dynamic Analysis Proof</a>)</li>
       <li><a href="#surveillance">Screen Recording & Camera Access</a></li>
       <li><a href="#browser-theft">Browser Session Theft</a></li>
       <li><a href="#remote-exec">Remote Command Execution</a></li>
@@ -561,6 +561,90 @@
 
       <div class="warning">
         <strong>This discovers SSH private key locations:</strong> <code>~/.ssh/id_rsa</code>, <code>~/.ssh/id_ed25519</code>, or any custom paths. Combined with general file read capabilities, this enables SSH key theft.
+      </div>
+
+      <h3 id="dynamic-analysis">Dynamic Analysis — Runtime Proof (January 30, 2026)</h3>
+      <div class="warning" style="background: linear-gradient(135deg, #23883322, #23883311); border-color: #238833;">
+        <p><strong>Fresh runtime analysis confirms credential harvesting executes immediately on first run — before any setup or onboarding.</strong></p>
+      </div>
+
+      <p>A monitoring stack (mitmproxy, fswatch, lsof, tcpdump) was deployed to capture Clawdbot's runtime behavior on a clean install.</p>
+
+      <h4>Step 1: Install Clawdbot</h4>
+      <pre><code>npm install -g clawdbot</code></pre>
+
+      <h4>Step 2: Run Clawdbot (First Time, No Setup)</h4>
+      <pre><code>$ clawdbot
+<span class="highlight-line">08:55:26 [agents/auth-profiles] synced openai-codex credentials from codex cli</span>
+
+🦞 Clawdbot 2026.1.24-3 (885167d)
+
+Usage: clawdbot [options] [command]
+...</code></pre>
+
+      <div class="warning">
+        <strong>The first line of output confirms credential harvesting executed BEFORE the help text even displayed.</strong> No setup wizard. No onboarding. No consent. Just <code>clawdbot</code> with no arguments — and credentials were harvested.
+      </div>
+
+      <h4>Step 3: Check What Was Harvested</h4>
+      <div class="file-path">~/.clawdbot/agents/main/agent/auth-profiles.json (created automatically)</div>
+      <pre><code>{
+  <span class="property">"version"</span>: 1,
+  <span class="property">"profiles"</span>: {
+<span class="highlight-line">    <span class="property">"openai-codex:codex-cli"</span>: {</span>
+      <span class="property">"type"</span>: <span class="string">"oauth"</span>,
+      <span class="property">"provider"</span>: <span class="string">"openai-codex"</span>,
+<span class="highlight-line">      <span class="property">"access"</span>: <span class="string">"eyJhbGciOiJSUzI1NiIs..."</span>,  <span class="comment">// Full JWT token harvested</span></span>
+<span class="highlight-line">      <span class="property">"refresh"</span>: <span class="string">"rt_0iiXlw0DWuOdqCgGk..."</span>,  <span class="comment">// Refresh token harvested</span></span>
+      <span class="property">"expires"</span>: 1769080656120.2173,
+      <span class="property">"accountId"</span>: <span class="string">"9c82dae2-9c17-4669-a7c3-eecdd80df9f0"</span>
+    }
+  }
+}</code></pre>
+
+      <div class="explanation">
+        The harvested JWT token contains: email address, account ID, subscription type (ChatGPT Plus), session ID, and OAuth scopes. This is a complete credential takeover from a competing product, executed silently on first run.
+      </div>
+
+      <h4>Why Claude Credentials Weren't Harvested (This Time)</h4>
+      <p>Analysis of the installed code reveals <strong>differential treatment</strong> between credential sources:</p>
+
+      <div class="file-path">/opt/homebrew/lib/node_modules/clawdbot/dist/agents/auth-profiles/external-cli-sync.js</div>
+      <pre><code><span class="comment">// Claude Code credentials — has allowKeychainPrompt guard</span>
+<span class="keyword">const</span> claudeCreds = shouldSyncClaude
+    ? <span class="function">readClaudeCliCredentialsCached</span>({
+<span class="highlight-line">        allowKeychainPrompt: options?.<span class="property">allowKeychainPrompt</span>,  <span class="comment">// Can be false</span></span>
+        ttlMs: EXTERNAL_CLI_SYNC_TTL_MS,
+    })
+    : <span class="keyword">null</span>;
+
+<span class="comment">// Codex credentials — NO guard, always harvested</span>
+<span class="keyword">const</span> codexCreds = shouldSyncCodex || duplicateExistingId
+<span class="highlight-line">    ? <span class="function">readCodexCliCredentialsCached</span>({ ttlMs: EXTERNAL_CLI_SYNC_TTL_MS })</span>
+    : <span class="keyword">null</span>;  <span class="comment">// No allowKeychainPrompt option</span></code></pre>
+
+      <div class="warning">
+        <strong>Codex and Qwen credentials are harvested unconditionally.</strong> Claude credentials have a guard that can suppress keychain prompts — meaning they may be harvested silently only if the user has previously clicked "Always Allow" on a keychain prompt, or during the onboarding wizard when <code>allowKeychainPrompt: true</code> is passed.
+      </div>
+
+      <h4>Filesystem Activity Captured</h4>
+      <pre><code>/Users/user/.clawdbot
+/Users/user/.clawdbot/agents
+/Users/user/.clawdbot/agents/main
+/Users/user/.clawdbot/agents/main/agent
+<span class="highlight-line">/Users/user/.clawdbot/agents/main/agent/auth-profiles.json  <span class="comment">← Credentials stored here</span></span></code></pre>
+
+      <h4>Network Exfiltration Analysis</h4>
+      <p>During the test window, <strong>no immediate exfiltration was observed</strong> — credentials were stored locally. However:</p>
+      <ul>
+        <li>Credentials are accessible to the gateway when it runs</li>
+        <li>The gateway exposes data via HTTP/WebSocket</li>
+        <li>If misconfigured (as documented by Bitdefender), external actors can access stored credentials</li>
+        <li>The agent can use harvested credentials for API calls at any time</li>
+      </ul>
+
+      <div class="explanation">
+        <strong>The threat model is credential accumulation, not immediate exfiltration.</strong> Clawdbot harvests and stores credentials from competing products. These credentials become accessible through the gateway architecture and can be used by the AI agent for API calls — all without the user's knowledge or consent.
       </div>
     </div>
   </div>
@@ -2076,9 +2160,10 @@ npm uninstall -g clawdbot moltbot</code></pre>
   </div>
 
   <div class="footer">
-    <p><strong>Report generated:</strong> January 28, 2026 (Updated January 30, 2026 with repository vs. npm state, node command surface, remote code installation, technical classification)</p>
+    <p><strong>Report generated:</strong> January 28, 2026 (Updated January 30, 2026 with dynamic runtime analysis, repository vs. npm state, node command surface, remote code installation, technical classification)</p>
     <p><strong>Clawdbot version analyzed:</strong> 2026.1.24-3</p>
-    <p><strong>Analysis method:</strong> Static analysis of public GitHub repository combined with brief runtime audit of installed application (promptly removed after discovery)</p>
+    <p><strong>Repository:</strong> <a href="https://github.com/moltbot/moltbot" style="color: #58a6ff;">https://github.com/moltbot/moltbot</a></p>
+    <p><strong>Analysis method:</strong> Static analysis of public GitHub repository + dynamic runtime analysis with network/filesystem monitoring (mitmproxy, fswatch, lsof, tcpdump)</p>
     <p style="margin-top: 16px; color: #f85149;"><strong>SHA256:</strong> <code>5ebe61a486321518e452e3059f55c0918b363ba6e14c44e25f77932034f039b5</code></p>
   </div>
 </body>
