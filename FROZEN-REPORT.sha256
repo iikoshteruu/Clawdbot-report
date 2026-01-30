@@ -1,0 +1,24 @@
+# Clawdbot/OpenClaw Security Audit - Frozen Report
+# Generated: 2026-01-30T13:24:50Z
+# Status: FINAL - Ready for publication
+
+de22a97771de553660bb1ba302a6bef2b980265030e4aea221a9fdcc382bfcc0  index.html
+
+# Verification command:
+# shasum -a 256 -c FROZEN-REPORT.sha256
+
+# Live-verified capabilities (January 30, 2026):
+# - Remote command execution via WhatsApp (whoami)
+# - Browser session extraction via WhatsApp (cookies from attached tab)
+# - Both verified in controlled test environments
+
+# Test methodology documented in report:
+# - Sterile Chrome profile, no real accounts
+# - localhost:8888 test page with planted dummy data
+# - No sensitive data accessed or exposed
+
+# Language review: Codex (neutral, capability-based phrasing)
+# Structure: Key Findings box, Terminology section, reordered disclaimers
+# Repository updated to: github.com/openclaw/openclaw
+
+# Severity: CRITICAL
