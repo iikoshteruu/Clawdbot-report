@@ -363,6 +363,7 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
   <div class="toc">
     <h3>Table of Contents</h3>
     <ol>
+      <li><a href="#encryption-analysis">Data Encryption Analysis</a> (NEW - Dynamic Analysis)</li>
       <li><a href="#credential-harvesting">Credential Harvesting & SSH Enumeration</a> (includes <a href="#dynamic-analysis">Dynamic Analysis Proof</a>)</li>
       <li><a href="#surveillance">Screen Recording & Camera Access</a></li>
       <li><a href="#browser-theft">Browser Session Theft</a></li>
@@ -383,6 +384,124 @@ node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
       <li><a href="#threat">Real-World Threat Scenario</a></li>
       <li><a href="#sources">Sources & Evidence</a></li>
     </ol>
+  </div>
+
+  <!-- Section 0: Data Encryption Analysis -->
+  <div class="section" id="encryption-analysis">
+    <div class="section-header">
+      <span class="num">0</span>
+      Data Encryption Analysis — Dynamic Testing (January 30, 2026)
+    </div>
+    <div class="section-content">
+      <p>Live testing with WhatsApp integration revealed <strong>no encryption at rest</strong> and plaintext handling throughout the message pipeline:</p>
+
+      <h3>Message Flow & Encryption Status</h3>
+      <table>
+        <tr>
+          <th>Stage</th>
+          <th>Encrypted?</th>
+          <th>Details</th>
+        </tr>
+        <tr>
+          <td>Phone to WhatsApp servers</td>
+          <td><span class="tag tag-green">YES</span></td>
+          <td>Signal Protocol E2E encryption in transit</td>
+        </tr>
+        <tr>
+          <td>WhatsApp servers to gateway (Baileys)</td>
+          <td><span class="tag tag-red">DECRYPTED</span></td>
+          <td>E2E terminated at gateway — messages become plaintext</td>
+        </tr>
+        <tr>
+          <td>Inside gateway (localhost)</td>
+          <td><span class="tag tag-red">PLAINTEXT</span></td>
+          <td>ws://127.0.0.1:18789 — unencrypted WebSocket</td>
+        </tr>
+        <tr>
+          <td>Gateway to AI provider</td>
+          <td><span class="tag tag-yellow">TLS only</span></td>
+          <td>HTTPS in transit, but provider sees plaintext</td>
+        </tr>
+        <tr>
+          <td>Stored on disk</td>
+          <td><span class="tag tag-red">PLAINTEXT</span></td>
+          <td>JSON files in ~/.clawdbot/ — no encryption at rest</td>
+        </tr>
+        <tr>
+          <td>WhatsApp session credentials</td>
+          <td><span class="tag tag-red">PLAINTEXT</span></td>
+          <td>Private keys stored as JSON in ~/.clawdbot/credentials/</td>
+        </tr>
+      </table>
+
+      <h3>Verified: Plaintext Message Storage</h3>
+      <div class="file-path">~/.clawdbot/agents/main/sessions/*.jsonl</div>
+      <pre><code>$ cat session.jsonl | grep '"text"'
+<span class="highlight-line">"text":"say hello"</span>
+<span class="highlight-line">"text":"Hello! How can I assist you today?"</span>
+<span class="highlight-line">"text":"[WhatsApp +819068662956] Hello"</span></code></pre>
+      <p>All messages stored as readable plaintext JSON. No encryption, no obfuscation.</p>
+
+      <h3>Verified: WhatsApp Private Keys Stored in Plaintext</h3>
+      <div class="file-path">~/.clawdbot/credentials/whatsapp/default/creds.json</div>
+      <pre><code>{
+  "noiseKey": {
+<span class="highlight-line">    "private": {"type":"Buffer","data":"kN/A+4VZedIU..."}</span>
+  },
+  "signedIdentityKey": {
+<span class="highlight-line">    "private": {"type":"Buffer","data":"+H9lntqz+SE..."}</span>
+  },
+  "me": {
+    "id": "819068662956:2@s.whatsapp.net",
+<span class="highlight-line">    "name": "イーサン"</span>
+  }
+}</code></pre>
+      <p><strong>822 files</strong> of WhatsApp session data stored in plaintext, including private encryption keys.</p>
+
+      <h3>Man-in-the-Middle Risk</h3>
+      <div class="warning">
+        <p><strong>If an attacker gains local access or intercepts localhost traffic:</strong></p>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>All WhatsApp messages readable in plaintext</li>
+          <li>WhatsApp session can be hijacked using stored private keys</li>
+          <li>Full conversation history accessible from JSONL files</li>
+          <li>AI provider API keys/tokens exposed</li>
+          <li>Phone numbers, message IDs, timestamps all visible</li>
+        </ul>
+        <p style="margin-top: 12px;">The gateway uses <code>ws://</code> (unencrypted WebSocket) on localhost. While localhost traffic is typically safe, any local compromise exposes everything.</p>
+      </div>
+
+      <h3>What Should Be Done</h3>
+      <div class="explanation">
+        <ul>
+          <li><strong>Encrypt at rest:</strong> Session files, credentials, and message logs should be encrypted</li>
+          <li><strong>Use OS keychain:</strong> Private keys should use macOS Keychain or similar secure storage</li>
+          <li><strong>Clear sensitive data:</strong> Provide option to auto-purge message history</li>
+          <li><strong>Document the risk:</strong> Users should know their messages are stored in plaintext</li>
+        </ul>
+      </div>
+
+      <h3>Data Flow Diagram</h3>
+      <div class="chain">
+<strong>Your Phone (WhatsApp)</strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> E2E encrypted via Signal Protocol<br>
+<strong>WhatsApp Servers (Meta)</strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> E2E encrypted to linked device<br>
+<strong>Baileys (on your machine) — E2E TERMINATED HERE</strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> <span style="color: #f85149;">PLAINTEXT from this point forward</span><br>
+<strong>Clawdbot Gateway (ws://localhost:18789)</strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> Logged to disk as plaintext JSON<br>
+<strong>AI Provider API (api.openai.com)</strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> HTTPS in transit, provider sees plaintext<br>
+<strong>Clawdbot Gateway</strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> Response logged to disk as plaintext<br>
+<strong>Baileys — Re-encrypted for transmission</strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span> E2E encrypted<br>
+<strong>WhatsApp Servers → Recipient</strong>
+      </div>
+
+      <p><strong>Summary:</strong> Your private WhatsApp messages are fully readable at rest. Anyone with access to <code>~/.clawdbot/</code> has access to your complete message history, session credentials, and can potentially hijack your WhatsApp Web session.</p>
+    </div>
   </div>
 
   <!-- Section 1: Credential Harvesting -->
