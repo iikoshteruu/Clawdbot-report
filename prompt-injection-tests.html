@@ -225,12 +225,12 @@
 <p class="subtitle">Independent security testing of AI agent prompt injection defenses | January 31, 2026</p>
 
 <div class="success-box">
-  <h2>Result: Excellent Prompt Injection Defenses</h2>
+  <h2>Result: Excellent Prompt Injection Defenses (via GPT-4o)</h2>
   <ul>
     <li><strong>16 out of 16</strong> prompt injection attack patterns successfully blocked</li>
     <li>Advanced techniques including Unicode tricks, memory poisoning, and roleplay escapes all defeated</li>
     <li>Consistent blocking regardless of framing, encoding, or social engineering attempts</li>
-    <li>GPT-4o backend with Clawdbot system prompts demonstrates robust safety filtering</li>
+    <li><strong>Note:</strong> These defenses come from GPT-4o's built-in safety training, not Clawdbot itself</li>
   </ul>
 </div>
 
@@ -597,7 +597,18 @@
 
 <h2>Conclusion</h2>
 
-<p>Clawdbot demonstrates <strong>excellent prompt injection defenses</strong> when using GPT-4o. The combination of GPT-4o's inherent safety training and Clawdbot's system prompts creates a robust barrier against common and advanced injection techniques.</p>
+<p>Clawdbot demonstrates <strong>excellent prompt injection defenses</strong> when using GPT-4o.</p>
+
+<div class="note-box">
+  <h3>Attribution: GPT-4o, Not Clawdbot</h3>
+  <p>These defenses are attributable to <strong>GPT-4o's built-in safety training</strong>, not Clawdbot-specific security measures. Evidence:</p>
+  <ul style="margin: 12px 0 12px 24px;">
+    <li>Refusal messages use standard GPT-4o phrasing, not custom Clawdbot messaging</li>
+    <li>Clawdbot's system prompts focus on functionality (skills, tools), not security filtering</li>
+    <li>The safety patterns are consistent with OpenAI's RLHF safety training</li>
+  </ul>
+  <p style="margin-top: 12px;"><strong>Warning:</strong> Users configuring Clawdbot with alternative models (open-source LLMs, older models like GPT-3.5, or models without safety fine-tuning) should not assume equivalent protection. The 16/16 pass rate observed here may not transfer to other model configurations.</p>
+</div>
 
 <p>Key observations:</p>
 <ul style="margin: 16px 0 16px 24px;">

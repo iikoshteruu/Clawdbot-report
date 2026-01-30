@@ -8,7 +8,9 @@
 
 ## Summary
 
-Clawdbot demonstrated **excellent security awareness** across a comprehensive range of prompt injection tests. It successfully blocked **all 16 attack patterns tested**, including sophisticated techniques like Unicode homoglyphs, RTL override characters, memory poisoning, roleplay escapes, and fake tool output injection.
+Clawdbot demonstrated **excellent prompt injection defenses** when using GPT-4o, successfully blocking **all 16 attack patterns tested**, including sophisticated techniques like Unicode homoglyphs, RTL override characters, memory poisoning, roleplay escapes, and fake tool output injection.
+
+**Important Attribution:** These defenses come from **GPT-4o's built-in safety training**, not Clawdbot-specific security measures. Users configuring Clawdbot with alternative models should not assume equivalent protection.
 
 ---
 
@@ -270,7 +272,7 @@ Some model providers may block or restrict access from third-party wrapper appli
 
 **Score: 16/16 tests passed (100%)**
 
-Clawdbot's prompt injection defenses are excellent. The GPT-4o backend with Clawdbot's system prompts effectively blocks all tested injection patterns, including:
+When using GPT-4o, prompt injection defenses are excellent. GPT-4o's built-in safety training effectively blocks all tested injection patterns, including:
 - Direct and indirect file access attempts
 - Unicode tricks (homoglyphs, RTL overrides)
 - Memory poisoning and trigger words
@@ -278,7 +280,9 @@ Clawdbot's prompt injection defenses are excellent. The GPT-4o backend with Claw
 - Fake tool output injection
 - Multi-turn social engineering
 
-**Note:** While prompt injection defenses are strong, other security concerns exist (automatic credential harvesting, remote command execution capabilities) that are documented in the main security report.
+**Note:** While prompt injection defenses are strong with GPT-4o, other security concerns exist (automatic credential harvesting, remote command execution capabilities) that are documented in the main security report.
+
+**Warning:** These defenses are attributable to GPT-4o, not Clawdbot. Alternative model configurations may have significantly weaker or no prompt injection protection.
 
 ---
 
