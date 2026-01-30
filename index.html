@@ -762,8 +762,27 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
 <span class="highlight-line">  });</span>
 }</code></pre>
 
+      <h3>Android Location Capture & Transmission</h3>
+      <div class="file-path">apps/android/.../LocationCaptureManager.kt (lines 45-61) — JSON payload construction</div>
+      <pre><code>Payload(
+  buildString {
+    append(<span class="string">"{\"lat\":"</span>)
+    append(location.latitude)
+    append(<span class="string">",\"lon\":"</span>)
+    append(location.longitude)
+    append(<span class="string">",\"accuracyMeters\":"</span>)
+    append(location.accuracy)
+<span class="highlight-line">    <span class="comment">// Also includes: altitudeMeters, speedMps, headingDeg, timestamp</span></span>
+    append(<span class="string">'}'</span>)
+  }
+)</code></pre>
+
+      <div class="file-path">apps/android/.../NodeRuntime.kt (line 1018) — Transmission to gateway</div>
+      <pre><code><span class="keyword">val</span> payload = location.<span class="function">getLocation</span>(providers, maxAgeMs, timeoutMs, isPrecise)
+<span class="highlight-line">GatewaySession.InvokeResult.<span class="function">ok</span>(payload.payloadJson)  <span class="comment">// Sent via WebSocket to gateway</span></span></code></pre>
+
       <div class="warning">
-        <strong>Pattern-of-Life Surveillance:</strong> Location data is transmitted to the gateway via the same WebSocket channel as other captured data. Over time, this builds a comprehensive profile of the user's movements — home address, workplace, daily routines, frequented locations, travel patterns. This is <strong>pattern-of-life analysis</strong>, a technique used in intelligence operations to understand and predict a target's behavior.
+        <strong>Pattern-of-Life Surveillance:</strong> Location data follows the exact same exfiltration path as camera/screen data — packaged as JSON, returned via <code>InvokeResult.ok()</code>, and transmitted over WebSocket to the gateway with no user notification. Over time, this builds a comprehensive profile of the user's movements — home address, workplace, daily routines, frequented locations, travel patterns. This is <strong>pattern-of-life analysis</strong>, a technique used in intelligence operations to understand and predict a target's behavior.
         <p style="margin-top: 12px;">Combined with camera captures, screen recordings, and message interception, this enables complete physical and digital surveillance of the target.</p>
       </div>
     </div>
@@ -1321,6 +1340,8 @@ npm uninstall -g clawdbot moltbot</code></pre>
       <li><code>src/browser/pw-tools-core.storage.ts</code> — Browser cookie/storage theft (lines 3-86)</li>
       <li><code>src/cli/browser-cli-state.cookies-storage.ts</code> — CLI commands for cookie access</li>
       <li><code>src/agents/tools/nodes-tool.ts</code> — Remote command execution (lines 388-441), GPS tracking (lines 358-386)</li>
+      <li><code>apps/android/.../LocationCaptureManager.kt</code> — GPS payload construction (lines 45-61)</li>
+      <li><code>apps/android/.../NodeRuntime.kt</code> — Location transmission to gateway (line 1018)</li>
       <li><code>src/web/inbound/monitor.ts</code> — WhatsApp message monitoring</li>
       <li><code>src/imessage/monitor/monitor-provider.ts</code> — iMessage monitoring</li>
       <li><code>src/daemon/launchd-plist.ts</code> — LaunchAgent configuration</li>
