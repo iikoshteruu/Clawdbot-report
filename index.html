@@ -336,6 +336,7 @@
       <li><a href="#macos-system">macOS Deep System Access</a></li>
       <li><a href="#browser-screenshots">Browser Page Screenshots</a></li>
       <li><a href="#local-storage">Local Data Hoarding</a></li>
+      <li><a href="#remote-code">Remote Code Installation</a></li>
       <li><a href="#persistence">Persistent Daemon</a></li>
       <li><a href="#execution">Execution Path Analysis</a></li>
       <li><a href="#disclosure">Disclosure Analysis</a></li>
@@ -1195,6 +1196,78 @@ end tell
     </div>
   </div>
 
+  <!-- Section 3f: Remote Code Installation -->
+  <div class="section" id="remote-code">
+    <div class="section-header">
+      <span class="num">3f</span>
+      Remote Code Installation — Gateway Can Install Arbitrary Software
+    </div>
+    <div class="section-content">
+      <p>The gateway exposes a <code>skills.install</code> method that can <strong>remotely install and execute arbitrary code</strong> on any connected device:</p>
+
+      <div class="file-path">src/gateway/server-methods/skills.ts (lines 100-131)</div>
+      <pre><code><span class="highlight-line"><span class="string">"skills.install"</span>: <span class="keyword">async</span> ({ params, respond }) => {</span>
+  <span class="keyword">const</span> p = params <span class="keyword">as</span> {
+    name: <span class="variable">string</span>;
+    installId: <span class="variable">string</span>;
+    timeoutMs?: <span class="variable">number</span>;
+  };
+  <span class="keyword">const</span> cfg = <span class="function">loadConfig</span>();
+  <span class="keyword">const</span> workspaceDirRaw = <span class="function">resolveAgentWorkspaceDir</span>(cfg, ...);
+<span class="highlight-line">  <span class="keyword">const</span> result = <span class="keyword">await</span> <span class="function">installSkill</span>({</span>
+<span class="highlight-line">    workspaceDir: workspaceDirRaw,</span>
+<span class="highlight-line">    skillName: p.name,  <span class="comment">// Arbitrary package name</span></span>
+<span class="highlight-line">    installId: p.installId,</span>
+<span class="highlight-line">  });</span>
+}</code></pre>
+
+      <h3>Installation Methods Supported</h3>
+      <div class="file-path">src/agents/skills-install.ts (lines 84-128)</div>
+      <pre><code><span class="keyword">function</span> <span class="function">buildInstallCommand</span>(spec, prefs) {
+  <span class="keyword">switch</span> (spec.kind) {
+<span class="highlight-line">    <span class="keyword">case</span> <span class="string">"brew"</span>: <span class="keyword">return</span> [<span class="string">"brew"</span>, <span class="string">"install"</span>, spec.formula];  <span class="comment">// macOS</span></span>
+<span class="highlight-line">    <span class="keyword">case</span> <span class="string">"node"</span>: <span class="keyword">return</span> [<span class="string">"npm"</span>, <span class="string">"install"</span>, <span class="string">"-g"</span>, spec.package];  <span class="comment">// npm packages</span></span>
+<span class="highlight-line">    <span class="keyword">case</span> <span class="string">"go"</span>:   <span class="keyword">return</span> [<span class="string">"go"</span>, <span class="string">"install"</span>, spec.module];  <span class="comment">// Go modules</span></span>
+<span class="highlight-line">    <span class="keyword">case</span> <span class="string">"uv"</span>:   <span class="keyword">return</span> [<span class="string">"uv"</span>, <span class="string">"tool"</span>, <span class="string">"install"</span>, spec.package];  <span class="comment">// Python</span></span>
+<span class="highlight-line">    <span class="keyword">case</span> <span class="string">"download"</span>: <span class="comment">// Direct file download</span></span>
+  }
+}</code></pre>
+
+      <h3>Dynamic Code Loading</h3>
+      <div class="file-path">src/plugins/loader.ts (lines 206-294)</div>
+      <pre><code><span class="keyword">const</span> jiti = <span class="function">createJiti</span>(import.meta.url, {
+  interopDefault: <span class="keyword">true</span>,
+  extensions: [<span class="string">".ts"</span>, <span class="string">".tsx"</span>, <span class="string">".mts"</span>, <span class="string">".js"</span>, <span class="string">".mjs"</span>, ...],
+});
+
+<span class="comment">// Later, for each plugin:</span>
+<span class="highlight-line">mod = <span class="function">jiti</span>(candidate.source) <span class="keyword">as</span> MoltbotPluginModule;  <span class="comment">// Execute arbitrary code</span></span></code></pre>
+
+      <table>
+        <tr>
+          <th>Attack Vector</th>
+          <th>Impact</th>
+        </tr>
+        <tr>
+          <td>Gateway calls <code>skills.install</code></td>
+          <td>Arbitrary npm/brew/go/Python package installed</td>
+        </tr>
+        <tr>
+          <td>Package contains malicious code</td>
+          <td>Code executed via <code>jiti</code> dynamic loader</td>
+        </tr>
+        <tr>
+          <td>Compromised gateway</td>
+          <td>All connected devices can have malware installed</td>
+        </tr>
+      </table>
+
+      <div class="warning">
+        <strong>This is a supply chain attack surface.</strong> The gateway can remotely install arbitrary packages from npm, brew, go, or Python repositories. Once installed, the code is dynamically loaded and executed via <code>jiti</code>. A compromised gateway, or a malicious package, results in arbitrary code execution on all connected devices.
+      </div>
+    </div>
+  </div>
+
   <!-- Section 4: Persistence -->
   <div class="section" id="persistence">
     <div class="section-header">
@@ -1733,8 +1806,105 @@ npm uninstall -g clawdbot moltbot</code></pre>
     </div>
   </div>
 
+  <!-- What This Report Does Not Claim -->
+  <div class="section" id="disclaimers" style="margin-top: 32px;">
+    <div class="section-header">
+      <span class="num">!</span>
+      What This Report Does Not Claim
+    </div>
+    <div class="section-content">
+      <p>This report documents <strong>verified technical capabilities</strong> present in the codebase. It does not make the following claims:</p>
+      <ul style="margin: 16px 0 16px 20px;">
+        <li><strong>No claims of author intent:</strong> This report does not speculate on whether these capabilities were implemented with malicious intent. The code exists; the motivation is unknown.</li>
+        <li><strong>No claims of active exploitation:</strong> This report does not claim these capabilities are currently being exploited against users. It documents what the code <em>can</em> do, not what it <em>is</em> doing.</li>
+        <li><strong>No claims of state involvement:</strong> This report makes no claims about government, corporate, or organized criminal involvement.</li>
+        <li><strong>No claims of data misuse:</strong> This report does not claim that harvested data has been sold, leaked, or misused. It documents the exfiltration paths that exist.</li>
+        <li><strong>No claims beyond documented behavior:</strong> Every finding in this report is supported by specific file paths, line numbers, and code snippets from the public repository.</li>
+      </ul>
+      <p>The purpose of this report is to inform users of capabilities that exist in software they may have installed, so they can make informed decisions about their security.</p>
+    </div>
+  </div>
+
+  <!-- Classification Statement -->
+  <div class="section" id="classification" style="margin-top: 32px;">
+    <div class="section-header">
+      <span class="num">!</span>
+      Technical Classification
+    </div>
+    <div class="section-content">
+      <div class="alert-box">
+        <p style="font-size: 16px; line-height: 1.8;">Based on the documented capabilities — persistent background execution, credential harvesting from multiple sources, remote shell command execution, camera/screen/audio surveillance, GPS tracking, browser session theft, remote code installation, and lack of informed user consent — <strong>this system meets the functional definition of spyware with RAT-class (Remote Access Trojan) control surfaces</strong>, regardless of its stated purpose as an "AI assistant framework."</p>
+        <p style="margin-top: 16px;">This classification is based solely on technical capabilities present in the code, not on speculation about intent or usage.</p>
+      </div>
+
+      <h3>Capability Summary</h3>
+      <table>
+        <tr>
+          <th>Capability Class</th>
+          <th>Present</th>
+          <th>Evidence</th>
+        </tr>
+        <tr>
+          <td>Persistence mechanism</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>LaunchAgent with KeepAlive</td>
+        </tr>
+        <tr>
+          <td>Credential harvesting</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>API keys, OAuth tokens, SSH config</td>
+        </tr>
+        <tr>
+          <td>Remote command execution</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>system.run via node.invoke</td>
+        </tr>
+        <tr>
+          <td>Camera surveillance</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>camera.snap, camera.clip</td>
+        </tr>
+        <tr>
+          <td>Screen surveillance</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>screen.record, browser screenshots</td>
+        </tr>
+        <tr>
+          <td>Audio surveillance</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>Swabble ambient audio capture</td>
+        </tr>
+        <tr>
+          <td>Location tracking</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>location.get on iOS/Android</td>
+        </tr>
+        <tr>
+          <td>Browser session theft</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>Cookies, localStorage, sessionStorage via CDP</td>
+        </tr>
+        <tr>
+          <td>Remote code installation</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>skills.install via gateway</td>
+        </tr>
+        <tr>
+          <td>Data exfiltration path</td>
+          <td><span class="tag tag-red">YES</span></td>
+          <td>WebSocket to gateway, base64 encoding</td>
+        </tr>
+        <tr>
+          <td>Informed user consent</td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td>Capabilities not disclosed in README/docs</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
   <div class="footer">
-    <p><strong>Report generated:</strong> January 30, 2026 (Updated with ambient audio listening, macOS deep system access, browser screenshots, local data hoarding, 31 messaging extensions)</p>
+    <p><strong>Report generated:</strong> January 30, 2026 (Updated with complete node command surface, remote code installation, technical classification, disclaimers)</p>
     <p><strong>Clawdbot version analyzed:</strong> 2026.1.24-3</p>
     <p><strong>Analysis method:</strong> Static analysis of public GitHub repository combined with brief runtime audit of installed application (promptly removed after discovery)</p>
     <p style="margin-top: 16px; color: #f85149;"><strong>SHA256:</strong> <code>5ebe61a486321518e452e3059f55c0918b363ba6e14c44e25f77932034f039b5</code></p>
