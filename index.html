@@ -337,6 +337,7 @@
       <li><a href="#browser-screenshots">Browser Page Screenshots</a></li>
       <li><a href="#local-storage">Local Data Hoarding</a></li>
       <li><a href="#remote-code">Remote Code Installation</a></li>
+      <li><a href="#presence-tracking">User Activity Tracking</a></li>
       <li><a href="#persistence">Persistent Daemon</a></li>
       <li><a href="#execution">Execution Path Analysis</a></li>
       <li><a href="#disclosure">Disclosure Analysis</a></li>
@@ -1264,6 +1265,69 @@ end tell
 
       <div class="warning">
         <strong>This is a supply chain attack surface.</strong> The gateway can remotely install arbitrary packages from npm, brew, go, or Python repositories. Once installed, the code is dynamically loaded and executed via <code>jiti</code>. A compromised gateway, or a malicious package, results in arbitrary code execution on all connected devices.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3g: User Activity & Presence Tracking -->
+  <div class="section" id="presence-tracking">
+    <div class="section-header">
+      <span class="num">3g</span>
+      User Activity & Presence Tracking
+    </div>
+    <div class="section-content">
+      <p>The macOS app sends periodic presence beacons to the gateway every 180 seconds, including user activity status:</p>
+
+      <div class="file-path">apps/macos/Sources/Moltbot/PresenceReporter.swift (lines 33-57)</div>
+      <pre><code><span class="keyword">private func</span> <span class="function">push</span>(reason: String) <span class="keyword">async</span> {
+  <span class="keyword">var</span> params: [String: AnyHashable] = [
+    <span class="string">"instanceId"</span>: self.instanceId,
+    <span class="string">"host"</span>: host,
+<span class="highlight-line">    <span class="string">"ip"</span>: ip,                    <span class="comment">// Device IP address</span></span>
+    <span class="string">"mode"</span>: mode,
+    <span class="string">"version"</span>: version,
+    <span class="string">"platform"</span>: platform,        <span class="comment">// "macos 14.0.0"</span>
+    <span class="string">"deviceFamily"</span>: <span class="string">"Mac"</span>,
+    <span class="string">"modelIdentifier"</span>: model,    <span class="comment">// Hardware model</span>
+<span class="highlight-line">    <span class="string">"lastInputSeconds"</span>: lastInput <span class="comment">// User idle time</span></span>
+  ]
+  <span class="keyword">try await</span> ControlChannel.shared.<span class="function">sendSystemEvent</span>(text, params: params)
+}</code></pre>
+
+      <h3>Idle Time Detection</h3>
+      <div class="file-path">apps/macos/Sources/Moltbot/PresenceReporter.swift (lines 90-95)</div>
+      <pre><code><span class="keyword">private static func</span> <span class="function">lastInputSeconds</span>() -> Int? {
+  <span class="keyword">let</span> anyEvent = CGEventType(rawValue: UInt32.max) ?? .null
+<span class="highlight-line">  <span class="keyword">let</span> seconds = CGEventSource.<span class="function">secondsSinceLastEventType</span>(</span>
+<span class="highlight-line">    .combinedSessionState, eventType: anyEvent)</span>
+  <span class="keyword">return</span> Int(seconds.rounded())
+}</code></pre>
+
+      <table>
+        <tr>
+          <th>Data Sent</th>
+          <th>Privacy Impact</th>
+        </tr>
+        <tr>
+          <td><code>lastInputSeconds</code></td>
+          <td>Gateway knows when user is active vs away from keyboard</td>
+        </tr>
+        <tr>
+          <td><code>ip</code></td>
+          <td>Device's current IP address exposed</td>
+        </tr>
+        <tr>
+          <td><code>modelIdentifier</code></td>
+          <td>Specific hardware model (e.g., "MacBookPro18,1")</td>
+        </tr>
+        <tr>
+          <td>180-second interval</td>
+          <td>Continuous monitoring of user presence patterns</td>
+        </tr>
+      </table>
+
+      <div class="explanation">
+        <strong>Surveillance timing:</strong> Knowing when a user is idle enables timing surveillance activities (camera, screen recording, audio) for when they're away from the keyboard.
       </div>
     </div>
   </div>
