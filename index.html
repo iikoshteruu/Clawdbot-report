@@ -781,6 +781,30 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
       <pre><code><span class="keyword">val</span> payload = location.<span class="function">getLocation</span>(providers, maxAgeMs, timeoutMs, isPrecise)
 <span class="highlight-line">GatewaySession.InvokeResult.<span class="function">ok</span>(payload.payloadJson)  <span class="comment">// Sent via WebSocket to gateway</span></span></code></pre>
 
+      <h3>iOS Location Capture & Transmission — Same Pattern</h3>
+      <div class="file-path">apps/ios/Sources/Model/NodeAppModel.swift (lines 612-623) — Payload construction</div>
+      <pre><code><span class="keyword">let</span> payload = MoltbotLocationPayload(
+    lat: location.coordinate.latitude,
+    lon: location.coordinate.longitude,
+    accuracyMeters: location.horizontalAccuracy,
+    altitudeMeters: location.altitude,
+    speedMps: location.speed,
+    headingDeg: location.course,
+    timestamp: ISO8601DateFormatter().<span class="function">string</span>(from: location.timestamp),
+    isPrecise: isPrecise)
+<span class="keyword">let</span> json = <span class="keyword">try</span> Self.<span class="function">encodePayload</span>(payload)
+<span class="highlight-line"><span class="keyword">return</span> BridgeInvokeResponse(id: req.id, ok: <span class="keyword">true</span>, payloadJSON: json)</span></code></pre>
+
+      <div class="file-path">apps/shared/MoltbotKit/.../GatewayNodeSession.swift (line 227) — WebSocket transmission</div>
+      <pre><code><span class="keyword">private func</span> <span class="function">sendInvokeResult</span>(...) <span class="keyword">async</span> {
+    <span class="comment">// params contains: id, nodeId, ok, payloadJSON (with lat/lon/etc)</span>
+<span class="highlight-line">    <span class="keyword">try await</span> channel.<span class="function">send</span>(method: <span class="string">"node.invoke.result"</span>, params: params)</span>
+}</code></pre>
+
+      <div class="explanation">
+        <strong>Cross-platform verification:</strong> Both iOS and Android use identical transmission — the <code>node.invoke.result</code> event sent over WebSocket to the gateway. The location payload (lat, lon, altitude, speed, heading, timestamp) leaves the device on both platforms.
+      </div>
+
       <div class="warning">
         <strong>Pattern-of-Life Surveillance:</strong> Location data follows the exact same exfiltration path as camera/screen data — packaged as JSON, returned via <code>InvokeResult.ok()</code>, and transmitted over WebSocket to the gateway with no user notification. Over time, this builds a comprehensive profile of the user's movements — home address, workplace, daily routines, frequented locations, travel patterns. This is <strong>pattern-of-life analysis</strong>, a technique used in intelligence operations to understand and predict a target's behavior.
         <p style="margin-top: 12px;">Combined with camera captures, screen recordings, and message interception, this enables complete physical and digital surveillance of the target.</p>
@@ -1342,6 +1366,8 @@ npm uninstall -g clawdbot moltbot</code></pre>
       <li><code>src/agents/tools/nodes-tool.ts</code> — Remote command execution (lines 388-441), GPS tracking (lines 358-386)</li>
       <li><code>apps/android/.../LocationCaptureManager.kt</code> — GPS payload construction (lines 45-61)</li>
       <li><code>apps/android/.../NodeRuntime.kt</code> — Location transmission to gateway (line 1018)</li>
+      <li><code>apps/ios/Sources/Model/NodeAppModel.swift</code> — iOS location payload + transmission (lines 612-623)</li>
+      <li><code>apps/shared/MoltbotKit/.../GatewayNodeSession.swift</code> — iOS/macOS WebSocket send (line 227)</li>
       <li><code>src/web/inbound/monitor.ts</code> — WhatsApp message monitoring</li>
       <li><code>src/imessage/monitor/monitor-provider.ts</code> — iMessage monitoring</li>
       <li><code>src/daemon/launchd-plist.ts</code> — LaunchAgent configuration</li>
