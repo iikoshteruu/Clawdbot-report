@@ -286,6 +286,14 @@
       <div class="label">Remote Shell Access</div>
     </div>
     <div class="stat-box">
+      <div class="number">31</div>
+      <div class="label">Messaging Platforms</div>
+    </div>
+    <div class="stat-box">
+      <div class="number">24/7</div>
+      <div class="label">Ambient Audio Listening</div>
+    </div>
+    <div class="stat-box">
       <div class="number">0</div>
       <div class="label">Consent Prompts</div>
     </div>
@@ -308,6 +316,12 @@
       <li><strong>GPS location tracking</strong> — precise device coordinates on demand</li>
       <li><strong>Credential harvesting</strong> from Claude Code, OpenAI Codex, Qwen CLI</li>
       <li><strong>SSH config enumeration</strong> — discovers private key paths for potential exfiltration</li>
+      <li><strong>Ambient audio listening</strong> — continuous mic tap with transcripts stored to disk (macOS)</li>
+      <li><strong>Accessibility API access</strong> — can read/control any window on macOS</li>
+      <li><strong>AppleScript automation</strong> — can control Terminal and "other apps"</li>
+      <li><strong>Browser screenshots</strong> — full page capture of any website</li>
+      <li><strong>Local data hoarding</strong> — sessions, media, transcripts stored for later exfiltration</li>
+      <li><strong>31 messaging extensions</strong> — Discord, Slack, Teams, Matrix, WhatsApp, Signal, Telegram, and 24 more</li>
       <li><strong>Persistent daemon</strong> that auto-starts and respawns after termination</li>
       <li><strong>AI agent autonomy</strong> to activate surveillance without user consent</li>
       <li><strong>Silent activation</strong> with no approval process</li>
@@ -322,6 +336,10 @@
       <li><a href="#browser-theft">Browser Session Theft</a></li>
       <li><a href="#remote-exec">Remote Command Execution</a></li>
       <li><a href="#messages">Message Interception</a></li>
+      <li><a href="#ambient-audio">Ambient Audio Listening (macOS)</a></li>
+      <li><a href="#macos-system">macOS Deep System Access</a></li>
+      <li><a href="#browser-screenshots">Browser Page Screenshots</a></li>
+      <li><a href="#local-storage">Local Data Hoarding</a></li>
       <li><a href="#persistence">Persistent Daemon</a></li>
       <li><a href="#execution">Execution Path Analysis</a></li>
       <li><a href="#disclosure">Disclosure Analysis</a></li>
@@ -892,6 +910,236 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
     </div>
   </div>
 
+  <!-- Section 3b: Ambient Audio Listening -->
+  <div class="section" id="ambient-audio">
+    <div class="section-header">
+      <span class="num">3b</span>
+      Ambient Audio Listening — Transcript Storage (macOS)
+    </div>
+    <div class="section-content">
+      <p>The <strong>Swabble</strong> component is an "always-on voice hook daemon" that continuously listens via microphone and <strong>stores transcripts to disk</strong>:</p>
+
+      <div class="file-path">Swabble/Sources/SwabbleCore/Speech/SpeechPipeline.swift (lines 52-59) — Continuous mic tap</div>
+      <pre><code><span class="keyword">let</span> inputNode = engine.inputNode
+<span class="keyword">let</span> inputFormat = inputNode.<span class="function">outputFormat</span>(forBus: 0)
+inputNode.<span class="function">removeTap</span>(onBus: 0)
+<span class="highlight-line">inputNode.<span class="function">installTap</span>(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self] buffer, _ in</span>
+<span class="highlight-line">    <span class="keyword">guard let</span> self <span class="keyword">else</span> { <span class="keyword">return</span> }</span>
+<span class="highlight-line">    <span class="keyword">let</span> boxed = UnsafeBuffer(buffer: buffer)</span>
+<span class="highlight-line">    Task { <span class="keyword">await</span> self.<span class="function">handleBuffer</span>(boxed.buffer, targetFormat: analyzerFormat) }</span>
+}</code></pre>
+
+      <div class="file-path">Swabble/README.md (line 86) — Transcripts persisted to disk</div>
+      <pre><code><span class="comment">// Config default:</span>
+"transcripts": {"enabled": <span class="keyword">true</span>, "maxEntries": 50}
+
+<span class="highlight-line"><span class="comment">// Storage location:</span></span>
+<span class="highlight-line">~/Library/Application Support/swabble/transcripts.log</span></code></pre>
+
+      <div class="file-path">Swabble/docs/spec.md (line 3) — Self-described as "always-on"</div>
+      <pre><code><span class="highlight-line">"brabble-style <strong>always-on voice hook</strong> for macOS 26 using Apple Speech.framework"</span></code></pre>
+
+      <div class="warning">
+        <strong>This is ambient listening with persistent storage:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>Microphone continuously tapped via <code>AVAudioEngine.installTap()</code></li>
+          <li>Audio transcribed via Apple Speech.framework (on-device)</li>
+          <li>Transcripts <strong>stored to disk</strong> (up to 50 entries by default)</li>
+          <li>Stored transcripts can be read via <code>system.run</code> and exfiltrated</li>
+          <li>User may not realize their conversations are being recorded and stored</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3c: macOS Deep System Access -->
+  <div class="section" id="macos-system">
+    <div class="section-header">
+      <span class="num">3c</span>
+      macOS Deep System Access — Accessibility & Automation
+    </div>
+    <div class="section-content">
+      <p>The macOS app requests extensive system permissions that provide deep control over the entire system:</p>
+
+      <h3>Accessibility API — Full UI Control</h3>
+      <div class="file-path">apps/macos/Sources/Moltbot/PermissionManager.swift (lines 85-94)</div>
+      <pre><code><span class="keyword">private static func</span> <span class="function">ensureAccessibility</span>(interactive: Bool) <span class="keyword">async</span> -> Bool {
+<span class="highlight-line">    <span class="keyword">let</span> trusted = <span class="keyword">await</span> MainActor.run { <span class="function">AXIsProcessTrusted</span>() }</span>
+    <span class="keyword">if</span> interactive, !trusted {
+        <span class="keyword">await</span> MainActor.run {
+            <span class="keyword">let</span> opts: NSDictionary = [<span class="string">"AXTrustedCheckOptionPrompt"</span>: <span class="keyword">true</span>]
+<span class="highlight-line">            _ = <span class="function">AXIsProcessTrustedWithOptions</span>(opts)</span>
+        }
+    }
+    <span class="keyword">return await</span> MainActor.run { <span class="function">AXIsProcessTrusted</span>() }
+}</code></pre>
+
+      <h3>AppleScript/Automation — Control Any App</h3>
+      <div class="file-path">apps/macos/Sources/Moltbot/Resources/Info.plist (line 61)</div>
+      <pre><code>&lt;key&gt;NSAppleEventsUsageDescription&lt;/key&gt;
+<span class="highlight-line">&lt;string&gt;Moltbot needs Automation (AppleScript) permission to <strong>drive Terminal and other apps</strong> for agent actions.&lt;/string&gt;</span></code></pre>
+
+      <div class="file-path">apps/macos/Sources/Moltbot/PermissionManager.swift (lines 381-389) — AppleScript execution</div>
+      <pre><code><span class="keyword">let</span> script = <span class="string">"""
+tell application "Terminal"
+    return "moltbot-ok"
+end tell
+"""</span>
+
+<span class="keyword">var</span> error: NSDictionary?
+<span class="highlight-line"><span class="keyword">let</span> appleScript = <span class="function">NSAppleScript</span>(source: script)</span>
+<span class="highlight-line"><span class="keyword">let</span> result = appleScript?.<span class="function">executeAndReturnError</span>(&error)</span></code></pre>
+
+      <h3>All macOS Permissions Requested</h3>
+      <div class="file-path">apps/macos/Sources/MoltbotIPC/IPC.swift (lines 6-12)</div>
+      <pre><code><span class="keyword">public enum</span> Capability: String, Codable, CaseIterable, Sendable {
+<span class="highlight-line">    <span class="keyword">case</span> appleScript      <span class="comment">// Control any app via AppleScript</span></span>
+    <span class="keyword">case</span> notifications
+<span class="highlight-line">    <span class="keyword">case</span> accessibility    <span class="comment">// Read/control any window via Accessibility API</span></span>
+<span class="highlight-line">    <span class="keyword">case</span> screenRecording  <span class="comment">// Capture screen content</span></span>
+<span class="highlight-line">    <span class="keyword">case</span> microphone       <span class="comment">// Record audio</span></span>
+<span class="highlight-line">    <span class="keyword">case</span> speechRecognition <span class="comment">// Transcribe speech</span></span>
+}</code></pre>
+
+      <div class="warning">
+        <strong>Accessibility + AppleScript = Total System Control:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li><strong>Accessibility API</strong> can read text from any window, click any button, control any UI element</li>
+          <li><strong>AppleScript</strong> can send commands to any scriptable application</li>
+          <li>Combined: Can read password managers, control banking apps, access any application data</li>
+          <li>These are the same permissions used by legitimate assistive tools — and by malware</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3d: Browser Screenshots -->
+  <div class="section" id="browser-screenshots">
+    <div class="section-header">
+      <span class="num">3d</span>
+      Browser Page Screenshots — Visual Capture of Any Webpage
+    </div>
+    <div class="section-content">
+      <p>Beyond cookies and storage, Clawdbot can take <strong>full screenshots of any webpage</strong> via Playwright/CDP:</p>
+
+      <div class="file-path">src/browser/pw-tools-core.interactions.ts (lines 334-362)</div>
+      <pre><code><span class="keyword">export async function</span> <span class="function">takeScreenshotViaPlaywright</span>(opts: {
+  cdpUrl: <span class="keyword">string</span>;
+  targetId?: <span class="keyword">string</span>;
+  ref?: <span class="keyword">string</span>;
+  element?: <span class="keyword">string</span>;
+  fullPage?: <span class="keyword">boolean</span>;
+  type?: <span class="string">"png"</span> | <span class="string">"jpeg"</span>;
+}): Promise&lt;{ buffer: Buffer }&gt; {
+  <span class="keyword">const</span> page = <span class="keyword">await</span> <span class="function">getPageForTargetId</span>(opts);
+  <span class="comment">// ... element/ref selection logic ...</span>
+<span class="highlight-line">  <span class="keyword">const</span> buffer = <span class="keyword">await</span> page.<span class="function">screenshot</span>({</span>
+<span class="highlight-line">    type,</span>
+<span class="highlight-line">    fullPage: Boolean(opts.fullPage),</span>
+<span class="highlight-line">  });</span>
+  <span class="keyword">return</span> { buffer };
+}</code></pre>
+
+      <div class="file-path">src/browser/cdp.ts (lines 38-70) — Direct CDP screenshot capture</div>
+      <pre><code><span class="keyword">export async function</span> <span class="function">captureScreenshot</span>(opts: {
+  wsUrl: <span class="keyword">string</span>;
+  fullPage?: <span class="keyword">boolean</span>;
+  format?: <span class="string">"png"</span> | <span class="string">"jpeg"</span>;
+  quality?: <span class="keyword">number</span>;
+}): Promise&lt;Buffer&gt; {
+  <span class="comment">// ...</span>
+<span class="highlight-line">  <span class="keyword">const</span> result = <span class="keyword">await</span> <span class="function">send</span>(<span class="string">"Page.captureScreenshot"</span>, {</span>
+    format,
+    fromSurface: <span class="keyword">true</span>,
+    captureBeyondViewport: <span class="keyword">true</span>,
+  });
+}</code></pre>
+
+      <div class="warning">
+        <strong>Can screenshot any page in your browser:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>Banking websites with account balances</li>
+          <li>Email with message content</li>
+          <li>Medical portals with health information</li>
+          <li>Corporate dashboards with sensitive data</li>
+          <li>Password managers (if web-based like 1Password)</li>
+        </ul>
+        <p style="margin-top: 12px;">Screenshots can be up to 5MB (src/browser/screenshot.ts:4) and transmitted via the same WebSocket channel as other captured data.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3e: Local Data Hoarding -->
+  <div class="section" id="local-storage">
+    <div class="section-header">
+      <span class="num">3e</span>
+      Local Data Hoarding — Everything Stored for Later Extraction
+    </div>
+    <div class="section-content">
+      <p>Clawdbot stores extensive data locally, all of which can be read via <code>system.run</code> and exfiltrated on demand:</p>
+
+      <h3>Data Storage Locations</h3>
+      <table>
+        <tr>
+          <th>Data Type</th>
+          <th>Storage Path</th>
+          <th>Source Reference</th>
+        </tr>
+        <tr>
+          <td>Session transcripts</td>
+          <td><code>~/.clawdbot/sessions/*.jsonl</code></td>
+          <td>src/gateway/session-utils.fs.ts:50</td>
+        </tr>
+        <tr>
+          <td>Captured media</td>
+          <td><code>~/.clawdbot/media/inbound/</code></td>
+          <td>src/auto-reply/reply.triggers:27</td>
+        </tr>
+        <tr>
+          <td>Agent data</td>
+          <td><code>~/.clawdbot/agents/</code></td>
+          <td>Multiple test files</td>
+        </tr>
+        <tr>
+          <td>Extensions</td>
+          <td><code>~/.clawdbot/extensions/</code></td>
+          <td>src/plugins/install.ts:91</td>
+        </tr>
+        <tr>
+          <td>Voice transcripts</td>
+          <td><code>~/Library/Application Support/swabble/transcripts.log</code></td>
+          <td>Swabble/README.md:86</td>
+        </tr>
+        <tr>
+          <td>VoiceWake settings</td>
+          <td><code>~/.clawdbot/settings/voicewake.json</code></td>
+          <td>src/gateway/server.models-voicewake-misc.e2e.test.ts:174</td>
+        </tr>
+      </table>
+
+      <div class="file-path">src/auto-reply/status.ts (line 172) — Confirms transcript storage</div>
+      <pre><code><span class="comment">// Transcripts are stored at the session file path</span>
+<span class="highlight-line"><span class="comment">// (fallback: ~/.clawdbot/sessions/&lt;SessionId&gt;.jsonl)</span></span></code></pre>
+
+      <h3>31 Messaging Platform Extensions</h3>
+      <p>The <code>extensions/</code> directory contains dedicated integrations for 31 messaging platforms:</p>
+      <div class="explanation" style="margin-top: 12px; font-family: monospace; font-size: 13px;">
+        bluebubbles, copilot-proxy, diagnostics-otel, discord, google-antigravity-auth, google-gemini-cli-auth, googlechat, imessage, line, llm-task, lobster, matrix, mattermost, memory-core, memory-lancedb, msteams, nextcloud-talk, nostr, open-prose, qwen-portal-auth, signal, slack, telegram, tlon, twitch, voice-call, whatsapp, zalo, zalouser
+      </div>
+
+      <div class="warning">
+        <strong>Local storage + system.run = Delayed exfiltration:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>Data captured now can be exfiltrated later</li>
+          <li><code>system.run</code> can <code>cat</code> any of these files</li>
+          <li>Session transcripts contain full conversation history</li>
+          <li>Voice transcripts contain ambient audio recordings</li>
+          <li>Media directory contains captured images/video</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
   <!-- Section 4: Persistence -->
   <div class="section" id="persistence">
     <div class="section-header">
@@ -1044,6 +1292,24 @@ KeepAlive=true (respawns if killed)
         <tr>
           <td>GPS location</td>
           <td><span class="tag tag-yellow">ONCE (OS)</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td>On agent/remote command</td>
+        </tr>
+        <tr>
+          <td>Ambient audio</td>
+          <td><span class="tag tag-yellow">ONCE (OS)</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td><span class="tag tag-red">ALWAYS (stored to disk)</span></td>
+        </tr>
+        <tr>
+          <td>Accessibility API</td>
+          <td><span class="tag tag-yellow">ONCE (OS)</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td>Full UI control of any app</td>
+        </tr>
+        <tr>
+          <td>Browser screenshots</td>
+          <td><span class="tag tag-red">NO</span></td>
           <td><span class="tag tag-red">NO</span></td>
           <td>On agent/remote command</td>
         </tr>
@@ -1372,7 +1638,15 @@ npm uninstall -g clawdbot moltbot</code></pre>
       <li><code>src/imessage/monitor/monitor-provider.ts</code> — iMessage monitoring</li>
       <li><code>src/daemon/launchd-plist.ts</code> — LaunchAgent configuration</li>
       <li><code>src/gateway/node-command-policy.ts</code> — Default-enabled surveillance</li>
-      <li><code>apps/macos/Sources/Moltbot/PermissionManager.swift</code> — Suppressible prompts</li>
+      <li><code>apps/macos/Sources/Moltbot/PermissionManager.swift</code> — Suppressible prompts, Accessibility API (lines 85-94), AppleScript (lines 77-82, 381-389)</li>
+      <li><code>Swabble/Sources/SwabbleCore/Speech/SpeechPipeline.swift</code> — Ambient audio mic tap (lines 52-59)</li>
+      <li><code>Swabble/README.md</code> — "always-on voice hook", transcript storage (line 86)</li>
+      <li><code>apps/macos/Sources/MoltbotIPC/IPC.swift</code> — Capability enum: appleScript, accessibility, screenRecording, microphone, speechRecognition (lines 6-12)</li>
+      <li><code>src/browser/pw-tools-core.interactions.ts</code> — Browser screenshot capture (lines 334-362)</li>
+      <li><code>src/browser/cdp.ts</code> — CDP screenshot via Page.captureScreenshot (lines 38-70)</li>
+      <li><code>src/gateway/session-utils.fs.ts</code> — Session storage at ~/.clawdbot/sessions/ (line 50)</li>
+      <li><code>src/auto-reply/status.ts</code> — Transcript storage confirmation (line 172)</li>
+      <li><code>extensions/</code> — 31 messaging platform integrations directory</li>
     </ul>
 
     <h3>Official Documentation</h3>
@@ -1405,7 +1679,7 @@ npm uninstall -g clawdbot moltbot</code></pre>
   </div>
 
   <div class="footer">
-    <p><strong>Report generated:</strong> January 30, 2026 (Updated with browser session theft, remote shell execution, GPS tracking, SSH enumeration)</p>
+    <p><strong>Report generated:</strong> January 30, 2026 (Updated with ambient audio listening, macOS deep system access, browser screenshots, local data hoarding, 31 messaging extensions)</p>
     <p><strong>Clawdbot version analyzed:</strong> 2026.1.24-3</p>
     <p><strong>Analysis method:</strong> Static analysis of public GitHub repository combined with brief runtime audit of installed application (promptly removed after discovery)</p>
     <p style="margin-top: 16px; color: #f85149;"><strong>SHA256:</strong> <code>5ebe61a486321518e452e3059f55c0918b363ba6e14c44e25f77932034f039b5</code></p>
