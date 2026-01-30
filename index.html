@@ -342,7 +342,7 @@
       <li><a href="#execution">Execution Path Analysis</a></li>
       <li><a href="#disclosure">Disclosure Analysis</a></li>
       <li><a href="#intent">Evidence of Intent</a></li>
-      <li><a href="#data-exposure">Data Exposure via Gateway</a></li>
+      <li><a href="#data-exposure">Gateway Architecture Context</a></li>
       <li><a href="#proliferation">Proliferation Risk (11,000+ Forks)</a></li>
       <li><a href="#threat">Real-World Threat Scenario</a></li>
       <li><a href="#sources">Sources & Evidence</a></li>
@@ -1685,58 +1685,17 @@ KeepAlive=true (respawns if killed)
           </div>
   </div>
 
-  <!-- Section 8: Data Exposure -->
+  <!-- Section 8: Gateway Architecture Context -->
   <div class="section" id="data-exposure">
     <div class="section-header">
       <span class="num">8</span>
-      Data Exposure via Gateway Architecture
+      Gateway Architecture Context
     </div>
     <div class="section-content">
-      <p>A common defense is: "The gateway runs on loopback (127.0.0.1), so data never leaves your machine." This is <strong>false for the primary use case</strong>.</p>
+      <p>For completeness, this section documents the gateway architecture. <strong>Static analysis did not identify a hardcoded external exfiltration endpoint.</strong></p>
 
-      <h3>The "Loopback" Defense Is False for Mobile Users</h3>
-      <p>When you pair an iPhone or Android device to Clawdbot:</p>
-      <ul>
-        <li>The mobile app connects to the gateway <strong>over the network</strong> — it physically cannot be loopback</li>
-        <li>All phone data (camera, location, messages) flows over this network connection</li>
-        <li>If the gateway is exposed or the network is compromised, all this data is interceptable</li>
-      </ul>
-
-      <h3>Gateway Bind Modes</h3>
-      <div class="file-path">src/config/types.gateway.ts (line 1)</div>
-      <pre><code><span class="keyword">type</span> GatewayBindMode = <span class="string">"auto"</span> | <span class="string">"lan"</span> | <span class="string">"loopback"</span> | <span class="string">"custom"</span> | <span class="string">"tailnet"</span>;</code></pre>
-
-      <table>
-        <tr>
-          <th>Bind Mode</th>
-          <th>Address</th>
-          <th>Exposure</th>
-        </tr>
-        <tr>
-          <td><code>loopback</code></td>
-          <td>127.0.0.1</td>
-          <td>Local only — but mobile devices cannot connect</td>
-        </tr>
-        <tr>
-          <td><code>lan</code></td>
-          <td>0.0.0.0</td>
-          <td><span class="tag tag-red">All interfaces</span> — Docker default</td>
-        </tr>
-        <tr>
-          <td><code>tailnet</code></td>
-          <td>Tailscale IP</td>
-          <td>Tailscale network — requires Tailscale trust</td>
-        </tr>
-        <tr>
-          <td><code>custom</code></td>
-          <td>User-specified</td>
-          <td>Depends on configuration</td>
-        </tr>
-      </table>
-
-      <div class="file-path">docker-compose.yml (line 25), docker-setup.sh (line 31)</div>
-      <pre><code><span class="comment"># Docker defaults to LAN binding</span>
-<span class="variable">CLAWDBOT_GATEWAY_BIND</span>=<span class="string">"${CLAWDBOT_GATEWAY_BIND:-lan}"</span></code></pre>
+      <h3>Messaging Platform Connections</h3>
+      <p>Major messaging platforms use outbound connections from the gateway (WhatsApp via Baileys WebSocket, Telegram via long-polling, Discord/Slack via their respective gateways). Users can run the gateway on loopback (127.0.0.1) and messaging will function normally.</p>
 
       <h3>What Data Flows Through the Gateway</h3>
       <table>
@@ -1747,7 +1706,7 @@ KeepAlive=true (respawns if killed)
         </tr>
         <tr>
           <td>Messages (31 platforms)</td>
-          <td>Webhooks → Gateway</td>
+          <td>Polling/WebSocket (outbound)</td>
           <td>JSON (full message content)</td>
         </tr>
         <tr>
@@ -1804,8 +1763,8 @@ KeepAlive=true (respawns if killed)
 <span class="string">"system.run is **remote code execution** on the Mac"</span></code></pre>
 
       <div class="warning">
-        <strong>The threat model is not "data sent to attacker server" — it's "data collected locally, gateway exposed, external actors access everything."</strong>
-        <p style="margin-top: 8px;">For mobile users, data MUST traverse the network to reach the gateway. The "loopback" defense applies only to CLI-only users who never connect mobile devices — not the primary marketed use case.</p>
+        <strong>The threat model is not "data sent to attacker server" — it's "data collected and aggregated locally, creating a high-value target."</strong>
+        <p style="margin-top: 8px;">If the gateway is misconfigured or exposed, external actors gain access to all collected data. Docker defaults to LAN binding. With 11,000+ forks and varying configuration skills, misconfigured gateways are a systemic risk.</p>
       </div>
 
       <h3>External Exposure Risk</h3>
