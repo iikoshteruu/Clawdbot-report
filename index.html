@@ -634,18 +634,17 @@ Usage: clawdbot [options] [command]
 /Users/user/.clawdbot/agents/main/agent
 <span class="highlight-line">/Users/user/.clawdbot/agents/main/agent/auth-profiles.json  <span class="comment">← Credentials stored here</span></span></code></pre>
 
-      <h4>Network Exfiltration Analysis</h4>
-      <p>During the test window, <strong>no immediate exfiltration was observed</strong> — credentials were stored locally. However:</p>
-      <ul>
-        <li>Credentials are accessible to the gateway when it runs</li>
-        <li>The gateway exposes data via HTTP/WebSocket</li>
-        <li>If misconfigured (as documented by Bitdefender), external actors can access stored credentials</li>
-        <li>The agent can use harvested credentials for API calls at any time</li>
-      </ul>
+      <h4>Credential Usage Attempt</h4>
+      <p>When configured to use the harvested OpenAI credentials:</p>
+      <pre><code>[openai-codex] Token refresh failed: 401 {
+  "error": {
+    "message": "Your refresh token has already been used to generate a new access token."
+  }
+}</code></pre>
+      <p>Clawdbot attempted to use the harvested refresh token to authenticate with OpenAI's API. The request failed because the token had already been consumed by the original Codex CLI. With fresh tokens, this would have succeeded.</p>
 
-      <div class="explanation">
-        <strong>The threat model is credential accumulation, not immediate exfiltration.</strong> Clawdbot harvests and stores credentials from competing products. These credentials become accessible through the gateway architecture and can be used by the AI agent for API calls — all without the user's knowledge or consent.
-      </div>
+      <h4>Summary</h4>
+      <p>Dynamic analysis confirms what static analysis indicated: credential harvesting executes on first run, credentials are stored locally, and Clawdbot attempts to use them for API calls. No external exfiltration was observed — credentials were used locally for API authentication.</p>
     </div>
   </div>
 
