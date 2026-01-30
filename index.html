@@ -635,13 +635,20 @@ Usage: clawdbot [options] [command]
 <span class="highlight-line">/Users/user/.clawdbot/agents/main/agent/auth-profiles.json  <span class="comment">← Credentials stored here</span></span></code></pre>
 
       <h4>Credential Usage Attempt</h4>
-      <p>When configured to use the harvested OpenAI credentials:</p>
+      <p>When configured to use the harvested OpenAI credentials, Clawdbot attempted to authenticate with OpenAI's API:</p>
       <pre><code>[openai-codex] Token refresh failed: 401 {
   "error": {
-    "message": "Your refresh token has already been used to generate a new access token."
+    "message": "Your refresh token has already been used to generate a new access token.",
+    "code": "refresh_token_reused"
   }
 }</code></pre>
-      <p>Clawdbot attempted to use the harvested refresh token to authenticate with OpenAI's API. The request failed because the token had already been consumed by the original Codex CLI. With fresh tokens, this would have succeeded.</p>
+      <p>Here's what happened:</p>
+      <ol>
+        <li><strong>Clawdbot harvested</strong> the refresh token from Codex CLI's credential store</li>
+        <li><strong>At some point</strong>, the real Codex CLI used that refresh token to get a new access token. Refresh tokens are single-use — once used, they're invalidated and a new one is issued.</li>
+        <li><strong>When Clawdbot tried to use it</strong>, OpenAI rejected the request because the token had already been consumed.</li>
+      </ol>
+      <p>Clawdbot had a stale copy. If the tokens had been fresh (not yet rotated by the original CLI), Clawdbot would have successfully authenticated as the user.</p>
 
       <h4>Summary</h4>
       <p>Dynamic analysis confirms what static analysis indicated: credential harvesting executes on first run, credentials are stored locally, and Clawdbot attempts to use them for API calls. No external exfiltration was observed — credentials were used locally for API authentication.</p>
