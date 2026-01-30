@@ -761,6 +761,65 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
         <strong>This is a Remote Access Trojan (RAT) capability.</strong> Combined with the persistent daemon, any paired device can have arbitrary commands executed remotely with no user consent or notification.
       </div>
 
+      <h3>Complete Node Command Surface</h3>
+      <p>The remote execution capability extends far beyond <code>system.run</code>. The <code>node-command-policy.ts</code> file reveals the <strong>complete list of commands</strong> that can be invoked on any connected device:</p>
+
+      <div class="file-path">src/gateway/node-command-policy.ts (lines 4-57)</div>
+      <pre><code><span class="comment">// Canvas Commands</span>
+<span class="keyword">const</span> CANVAS_COMMANDS = [
+  <span class="string">"canvas.present"</span>, <span class="string">"canvas.hide"</span>, <span class="string">"canvas.navigate"</span>,
+<span class="highlight-line">  <span class="string">"canvas.eval"</span>,  <span class="comment">// Execute arbitrary JavaScript!</span></span>
+  <span class="string">"canvas.snapshot"</span>, <span class="string">"canvas.a2ui.push"</span>, ...
+];
+
+<span class="comment">// Camera Commands</span>
+<span class="keyword">const</span> CAMERA_COMMANDS = [<span class="string">"camera.list"</span>, <span class="string">"camera.snap"</span>, <span class="string">"camera.clip"</span>];
+
+<span class="comment">// Screen Commands</span>
+<span class="keyword">const</span> SCREEN_COMMANDS = [<span class="string">"screen.record"</span>];
+
+<span class="comment">// Location Commands</span>
+<span class="keyword">const</span> LOCATION_COMMANDS = [<span class="string">"location.get"</span>];
+
+<span class="comment">// SMS Commands (Android only)</span>
+<span class="keyword">const</span> SMS_COMMANDS = [<span class="string">"sms.send"</span>];
+
+<span class="comment">// System Commands</span>
+<span class="keyword">const</span> SYSTEM_COMMANDS = [
+<span class="highlight-line">  <span class="string">"system.run"</span>,  <span class="comment">// Arbitrary shell execution</span></span>
+  <span class="string">"system.which"</span>, <span class="string">"system.notify"</span>,
+  <span class="string">"system.execApprovals.get"</span>, <span class="string">"system.execApprovals.set"</span>,
+<span class="highlight-line">  <span class="string">"browser.proxy"</span>,  <span class="comment">// Browser automation proxy</span></span>
+];</code></pre>
+
+      <h4>Platform Command Matrix</h4>
+      <table>
+        <tr>
+          <th>Platform</th>
+          <th>Remote Commands Available</th>
+        </tr>
+        <tr>
+          <td><strong>macOS</strong></td>
+          <td>Canvas, Camera, Screen, Location, <span class="tag tag-red">Shell Execution</span>, Browser Proxy</td>
+        </tr>
+        <tr>
+          <td><strong>iOS</strong></td>
+          <td>Canvas, Camera, Screen, Location</td>
+        </tr>
+        <tr>
+          <td><strong>Android</strong></td>
+          <td>Canvas, Camera, Screen, Location, <span class="tag tag-red">SMS Sending</span></td>
+        </tr>
+        <tr>
+          <td><strong>Linux/Windows</strong></td>
+          <td><span class="tag tag-red">Shell Execution</span>, Browser Proxy</td>
+        </tr>
+      </table>
+
+      <div class="warning">
+        <strong>This is not a simple automation tool.</strong> The node command surface enables: arbitrary shell command execution, camera surveillance, screen recording, GPS tracking, SMS sending, and remote JavaScript execution. This is a comprehensive remote access framework.
+      </div>
+
       <h3>GPS Location Tracking</h3>
       <p>The same <code>nodes</code> tool also includes location tracking:</p>
       <div class="file-path">src/agents/tools/nodes-tool.ts (lines 358-386)</div>
