@@ -487,6 +487,50 @@
         </ul>
       </div>
 
+      <h3>Repository vs. Published Package State</h3>
+      <p>As of January 30, 2026, there is a discrepancy between the git repository and the npm-published package:</p>
+
+      <table>
+        <tr>
+          <th>Source</th>
+          <th>Version</th>
+          <th>Date</th>
+          <th>Credential Sync Status</th>
+        </tr>
+        <tr>
+          <td>npm (<code>clawdbot</code>)</td>
+          <td>2026.1.24-3</td>
+          <td>January 25, 2026 15:21 UTC</td>
+          <td><span class="tag tag-red">Active</span> Claude + Codex sync enabled</td>
+        </tr>
+        <tr>
+          <td>Git repository (main)</td>
+          <td>2026.1.27-beta.1</td>
+          <td>January 26, 2026 19:05 UTC</td>
+          <td><span class="tag tag-yellow">Removed</span> Claude + Codex sync removed</td>
+        </tr>
+      </table>
+
+      <div class="file-path">Commit 526303d9a (January 26, 2026 19:05 UTC)</div>
+      <pre><code>refactor(auth)!: remove external CLI OAuth reuse
+
+- Removed: readClaudeCliCredentialsCached
+- Removed: readCodexCliCredentialsCached
+- Removed: CLAUDE_CLI_PROFILE_ID from sync
+- Removed: CODEX_CLI_PROFILE_ID from sync
+- Retained: Qwen CLI credential sync only</code></pre>
+
+      <div class="explanation">
+        <strong>Observable facts:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li>The documented installation method (<code>npm install -g clawdbot</code>) installs version 2026.1.24-3</li>
+          <li>Version 2026.1.24-3 contains active Claude and Codex credential synchronization</li>
+          <li>The removal commit exists in the git repository but has not been published to npm</li>
+          <li>No changelog entry documents the removal of this functionality</li>
+          <li>The underlying credential reading functions (<code>readClaudeCliCredentials</code>, <code>readCodexCliCredentials</code>) remain in the codebase</li>
+        </ul>
+      </div>
+
       <h3>SSH Config Enumeration — Private Key Path Discovery</h3>
       <p>Clawdbot includes functionality to parse SSH configurations, extracting user, hostname, port, and <strong>identity file paths</strong> (private keys):</p>
 
