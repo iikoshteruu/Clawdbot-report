@@ -284,6 +284,8 @@ When using GPT-4o, prompt injection defenses are excellent. GPT-4o's built-in sa
 
 **Warning:** These defenses are attributable to GPT-4o, not Clawdbot. Alternative model configurations may have significantly weaker or no prompt injection protection.
 
+**Security Impact:** Whether by intentional architecture or happenstance, the use of GPT-4o effectively closes system-level compromise vectors via prompt injection. The doors and backdoors that would allow an attacker to escalate from chat access to file system access, credential theft, or command execution via prompt manipulation are locked by the model's safety layer. This is a meaningful security boundary, even if not explicitly designed by Clawdbot's developers.
+
 ---
 
 *Document will be updated as additional tests are performed.*
