@@ -271,56 +271,92 @@
   <div class="stat-grid">
     <div class="stat-box">
       <div class="number">83,100+</div>
-      <div class="label">GitHub Stars (climbing fast)</div>
+      <div class="label">GitHub Stars</div>
     </div>
     <div class="stat-box">
       <div class="number">11,000+</div>
-      <div class="label">Forks (code replicated)</div>
+      <div class="label">Forks</div>
+    </div>
+    <div class="stat-box" style="border: 2px solid #238833;">
+      <div class="number" style="color: #238833;">PROVEN</div>
+      <div class="label">Credential Harvesting</div>
     </div>
     <div class="stat-box">
-      <div class="number">31</div>
-      <div class="label">Messaging Platforms</div>
-    </div>
-    <div class="stat-box">
-      <div class="number">RAT</div>
-      <div class="label">Remote Shell Access</div>
-    </div>
-    <div class="stat-box">
-      <div class="number">24/7</div>
-      <div class="label">Ambient Audio Listening</div>
+      <div class="number">LAN</div>
+      <div class="label">Remote Access (Paired Devices)</div>
     </div>
     <div class="stat-box">
       <div class="number">0</div>
-      <div class="label">Consent Prompts</div>
+      <div class="label">External C2 Servers Found</div>
     </div>
     <div class="stat-box">
-      <div class="number">0</div>
-      <div class="label">Transmission Notifications</div>
+      <div class="number">localhost</div>
+      <div class="label">Gateway Binding</div>
     </div>
   </div>
 
   <div class="alert-box">
     <h2>Executive Summary</h2>
-    <p>Clawdbot (rebranded to Moltbot) presents itself as a "personal AI assistant" with WhatsApp integration. Investigation reveals it includes <strong>undisclosed monitoring and credential access capabilities</strong>:</p>
+    <p>Clawdbot (rebranded to Moltbot) presents itself as a "personal AI assistant" with WhatsApp integration. This investigation found <strong>undisclosed credential harvesting and concerning capabilities</strong>:</p>
+
+    <h3 style="color: #238833; margin-top: 16px; border: none;">Proven (Static + Dynamic Analysis)</h3>
     <ul>
-      <li><strong>Screen recording</strong> with audio capture, remotely triggered (macOS & Android)</li>
-      <li><strong>Camera access</strong> for photos and video, remotely triggered (iOS & Android)</li>
-      <li><strong>Silent exfiltration</strong> — captured media transmitted to gateway with no user notification</li>
-      <li><strong>Message interception</strong> across WhatsApp, iMessage, Signal, Telegram</li>
-      <li><strong>Browser session theft</strong> — cookies and localStorage from all sites via Playwright/CDP</li>
-      <li><strong>Remote command execution</strong> — arbitrary shell commands on paired devices</li>
-      <li><strong>GPS location tracking</strong> — precise device coordinates on demand</li>
-      <li><strong>Credential harvesting</strong> from Claude Code, OpenAI Codex, Qwen CLI</li>
-      <li><strong>SSH config enumeration</strong> — discovers private key paths for potential exfiltration</li>
-      <li><strong>Ambient audio listening</strong> — continuous mic tap with transcripts stored to disk (macOS)</li>
-      <li><strong>Accessibility API access</strong> — can read/control any window on macOS</li>
-      <li><strong>AppleScript automation</strong> — can control Terminal and "other apps"</li>
-      <li><strong>Browser screenshots</strong> — full page capture of any website</li>
-      <li><strong>Local data hoarding</strong> — sessions, media, transcripts stored for later exfiltration</li>
-      <li><strong>31 messaging extensions</strong> — Discord, Slack, Teams, Matrix, WhatsApp, Signal, Telegram, and 24 more</li>
-      <li><strong>Persistent daemon</strong> that auto-starts and respawns after termination</li>
-      <li><strong>AI agent autonomy</strong> to activate surveillance without user consent</li>
-      <li><strong>Silent activation</strong> with no approval process</li>
+      <li><strong>Credential harvesting</strong> from Claude Code, OpenAI Codex, Qwen CLI — executes on first run without consent</li>
+      <li><strong>Attempts to use harvested credentials</strong> — confirmed via API error logs</li>
+      <li><strong>SSH config enumeration</strong> — discovers private key paths</li>
+      <li><strong>Configuration persistence</strong> — settings survive uninstall</li>
+      <li><strong>Bonjour broadcasting</strong> — advertises presence on local network</li>
+    </ul>
+
+    <h3 style="color: #d29922; margin-top: 16px; border: none;">Capabilities Present in Code (Not Proven Active)</h3>
+    <ul>
+      <li><strong>Screen recording</strong> with audio capture (macOS & Android mobile apps)</li>
+      <li><strong>Camera access</strong> for photos and video (iOS & Android mobile apps)</li>
+      <li><strong>Browser session access</strong> — cookies and localStorage via Playwright/CDP</li>
+      <li><strong>Remote command execution</strong> — shell commands on <em>paired</em> devices</li>
+      <li><strong>Ambient audio listening</strong> — mic capture with transcripts (macOS)</li>
+      <li><strong>Accessibility API access</strong> — can read/control windows on macOS</li>
+      <li><strong>31 messaging extensions</strong> — Discord, Slack, Teams, WhatsApp, Signal, etc.</li>
+      <li><strong>Persistent daemon</strong> — auto-starts via LaunchAgent</li>
+    </ul>
+
+    <h3 style="color: #58a6ff; margin-top: 16px; border: none;">Not Found (Dynamic Analysis)</h3>
+    <ul>
+      <li><strong>No external C2 servers</strong> — gateway binds to localhost only (127.0.0.1)</li>
+      <li><strong>No phone-home telemetry</strong> — no analytics/tracking endpoints detected</li>
+      <li><strong>No automatic external exfiltration</strong> — mitmproxy captured zero external HTTPS</li>
+      <li><strong>Remote access requires explicit LAN pairing</strong> — not externally accessible by default</li>
+    </ul>
+  </div>
+
+  <div class="alert-box" id="dynamic-findings" style="background: linear-gradient(135deg, #58a6ff22, #58a6ff11); border-color: #58a6ff;">
+    <h2 style="color: #58a6ff;">Dynamic Analysis Summary (January 30, 2026)</h2>
+    <p>A monitoring stack (mitmproxy, fswatch, lsof, tcpdump, netstat) was deployed to capture Clawdbot's runtime behavior.</p>
+
+    <h3 style="color: #58a6ff; margin-top: 16px; border: none;">Network Binding Analysis</h3>
+    <pre><code>$ netstat -an | grep -E "(18789|18791)"
+tcp4  0  0  127.0.0.1.18789  *.*  LISTEN     # Gateway - localhost only
+tcp6  0  0  ::1.18789        *.*  LISTEN     # Gateway - localhost only
+tcp4  0  0  127.0.0.1.18791  *.*  LISTEN     # Browser automation - localhost only
+
+$ lsof -i -n -P | grep node | grep -v "localhost|127.0.0.1|::1"
+node  21302  UDP *:5353    # Only Bonjour/mDNS exposed</code></pre>
+    <p><strong>Finding:</strong> Gateway and all services bind to localhost (127.0.0.1, ::1). The only external exposure is UDP 5353 (Bonjour) for local network discovery. No external TCP listeners.</p>
+
+    <h3 style="color: #58a6ff; margin-top: 16px; border: none;">External Connection Analysis</h3>
+    <pre><code>$ mitmdump -n -r runtime.flow
+[::1]:57099: GET http://127.0.0.1:18789/  << 200 OK
+[::1]:57101: GET http://127.0.0.1:18791/  << 200 OK
+# Zero external HTTPS connections captured during session</code></pre>
+    <p><strong>Finding:</strong> No phone-home behavior, no telemetry endpoints, no hardcoded C2 servers detected.</p>
+
+    <h3 style="color: #58a6ff; margin-top: 16px; border: none;">What This Means</h3>
+    <ul>
+      <li><strong>Credential harvesting is the primary proven concern</strong> — executes silently, stores locally, attempts to use</li>
+      <li><strong>This is not traditional malware</strong> with external C2 infrastructure</li>
+      <li><strong>Remote access requires explicit LAN pairing</strong> — not externally accessible by default</li>
+      <li><strong>Capabilities exist but aren't automatically weaponized</strong> — concerning but not actively exfiltrating</li>
+      <li><strong>Risk increases if gateway is exposed</strong> — via port forwarding, Tailscale funnel, or Docker misconfiguration</li>
     </ul>
   </div>
 
@@ -687,8 +723,8 @@ Payload(<span class="string">"""{"format":"jpg","base64":"$base64","width":${res
         All captured media is base64 encoded and packaged as JSON payloads — ready for transmission. These are not theoretical capabilities. They are implemented, tested, and shipping in the public repository.
       </div>
 
-      <h3>Complete Exfiltration Chain — Verified</h3>
-      <p>Analysis of the Android codebase reveals a complete, silent data exfiltration pipeline:</p>
+      <h3>Data Capture Chain — Code Analysis</h3>
+      <p>Analysis of the Android codebase reveals data can flow from capture to the local gateway:</p>
 
       <div class="chain">
 <strong>1. Remote Command Reception</strong> (GatewaySession.kt:450-455, 472-495)<br>
@@ -768,7 +804,7 @@ Payload(<span class="string">"""{"format":"jpg","base64":"$base64","width":${res
         <li>Combined with <strong>misleading UI</strong> — "captured" implies local, not transmitted</li>
       </ul>
       <div class="warning">
-        <strong>Any one of these would be concerning. Together, they form a complete covert exfiltration pipeline — one that can operate autonomously without any human at the controls.</strong>
+        <strong>Note:</strong> Dynamic analysis found the gateway binds to localhost (127.0.0.1) only. Data flows to the local gateway, not to external servers. However, if the gateway were exposed (via port forwarding, Tailscale funnel, or misconfiguration), these capabilities could enable remote surveillance.
       </div>
     </div>
   </div>
@@ -894,7 +930,7 @@ storage session get     <span class="comment">// Get all sessionStorage</span></
       </table>
 
       <div class="warning">
-        <strong>This is a Remote Access Trojan (RAT) capability.</strong> Combined with the persistent daemon, any paired device can have arbitrary commands executed remotely with no user consent or notification.
+        <strong>This enables remote command execution on paired devices.</strong> However, dynamic analysis found the gateway binds to localhost only — remote access requires explicit pairing on the local network. This is not a traditional RAT with external C2, but the capability exists for LAN-based remote control of paired devices.
       </div>
 
       <h3>Complete Node Command Surface</h3>
@@ -1267,7 +1303,7 @@ end tell
       Local Data Hoarding — Everything Stored for Later Extraction
     </div>
     <div class="section-content">
-      <p>Clawdbot stores extensive data locally, all of which can be read via <code>system.run</code> and exfiltrated on demand:</p>
+      <p>Clawdbot stores extensive data locally. While dynamic analysis found no automatic external exfiltration, this data could be accessed via <code>system.run</code> on paired devices:</p>
 
       <h3>Data Storage Locations</h3>
       <table>
@@ -1318,15 +1354,15 @@ end tell
         bluebubbles, copilot-proxy, diagnostics-otel, discord, google-antigravity-auth, google-gemini-cli-auth, googlechat, imessage, line, llm-task, lobster, matrix, mattermost, memory-core, memory-lancedb, msteams, nextcloud-talk, nostr, open-prose, qwen-portal-auth, signal, slack, telegram, tlon, twitch, voice-call, whatsapp, zalo, zalouser
       </div>
 
-      <div class="warning">
-        <strong>Local storage + system.run = Delayed exfiltration:</strong>
+      <div class="explanation">
+        <strong>Local storage + system.run = Potential data access on paired devices:</strong>
         <ul style="margin-top: 8px; margin-left: 20px;">
-          <li>Data captured now can be exfiltrated later</li>
-          <li><code>system.run</code> can <code>cat</code> any of these files</li>
+          <li><code>system.run</code> can <code>cat</code> any of these files on paired devices</li>
           <li>Session transcripts contain full conversation history</li>
-          <li>Voice transcripts contain ambient audio recordings</li>
+          <li>Voice transcripts contain audio recordings</li>
           <li>Media directory contains captured images/video</li>
         </ul>
+        <p style="margin-top: 8px;"><em>Note: Dynamic analysis found no automatic external exfiltration. Gateway binds to localhost only.</em></p>
       </div>
     </div>
   </div>
@@ -2152,9 +2188,9 @@ npm uninstall -g clawdbot moltbot</code></pre>
           <td>skills.install via gateway</td>
         </tr>
         <tr>
-          <td>Data exfiltration path</td>
-          <td><span class="tag tag-red">YES</span></td>
-          <td>WebSocket to gateway, base64 encoding</td>
+          <td>Data path to local gateway</td>
+          <td><span class="tag tag-yellow">YES*</span></td>
+          <td>WebSocket to localhost gateway (no external C2 found)</td>
         </tr>
         <tr>
           <td>Informed user consent</td>
@@ -2166,7 +2202,7 @@ npm uninstall -g clawdbot moltbot</code></pre>
   </div>
 
   <div class="footer">
-    <p><strong>Report generated:</strong> January 28, 2026 (Updated January 30, 2026 with dynamic runtime analysis, repository vs. npm state, node command surface, remote code installation, technical classification)</p>
+    <p><strong>Report generated:</strong> January 28, 2026 (Updated January 30, 2026 with dynamic runtime analysis confirming credential harvesting, network binding analysis showing localhost-only gateway, and nuanced findings)</p>
     <p><strong>Clawdbot version analyzed:</strong> 2026.1.24-3</p>
     <p><strong>Repository:</strong> <a href="https://github.com/moltbot/moltbot" style="color: #58a6ff;">https://github.com/moltbot/moltbot</a></p>
     <p><strong>Analysis method:</strong> Static analysis of public GitHub repository + dynamic runtime analysis with network/filesystem monitoring (mitmproxy, fswatch, lsof, tcpdump)</p>
