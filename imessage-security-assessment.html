@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clawdbot iMessage Security Assessment - Full Conversation Access</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      padding: 40px;
+      line-height: 1.6;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #f85149;
+      font-size: 32px;
+      margin-bottom: 8px;
+      border-bottom: 2px solid #f85149;
+      padding-bottom: 16px;
+    }
+    h2 {
+      color: #f85149;
+      font-size: 24px;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #30363d;
+      padding-bottom: 8px;
+    }
+    h3 {
+      color: #58a6ff;
+      font-size: 18px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      color: #8b949e;
+      font-size: 18px;
+      margin-bottom: 32px;
+    }
+    .alert-box {
+      background: linear-gradient(135deg, #f8514922, #f8514911);
+      border: 2px solid #f85149;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+    .alert-box h2 {
+      margin-top: 0;
+      border: none;
+      padding: 0;
+    }
+    .alert-box ul {
+      margin-left: 20px;
+      margin-top: 12px;
+    }
+    .alert-box li {
+      margin-bottom: 8px;
+    }
+    .warning-box {
+      background: linear-gradient(135deg, #d2992222, #d2992211);
+      border: 2px solid #d29922;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+    .warning-box h3 {
+      margin-top: 0;
+      color: #d29922;
+    }
+    .section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .section-header {
+      background: #21262d;
+      padding: 16px 20px;
+      border-bottom: 1px solid #30363d;
+      font-weight: 600;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-header .num {
+      background: #f85149;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .section-content {
+      padding: 20px;
+    }
+    .file-path {
+      color: #8b949e;
+      font-size: 12px;
+      margin-bottom: 12px;
+      font-family: 'SF Mono', Consolas, monospace;
+    }
+    pre {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 12px 0;
+    }
+    code {
+      font-family: 'SF Mono', Consolas, monospace;
+      background: #21262d;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .command { color: #ffa657; }
+    .output { color: #a5d6ff; }
+    .sensitive { color: #f85149; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th, td {
+      border: 1px solid #30363d;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: #21262d;
+      color: #58a6ff;
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background: #161b2288;
+    }
+    .risk-badge {
+      background: #f85149;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .risk-badge.medium {
+      background: #d29922;
+    }
+    .findings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .finding-card {
+      background: #161b22;
+      border: 1px solid #f85149;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .finding-card h4 {
+      color: #f85149;
+      margin-bottom: 12px;
+    }
+    .finding-card p {
+      color: #8b949e;
+      font-size: 14px;
+    }
+    .architecture-diagram {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+      text-align: center;
+    }
+    .architecture-diagram pre {
+      text-align: left;
+      display: inline-block;
+    }
+    .nav-links {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #30363d;
+    }
+    .nav-links a {
+      color: #58a6ff;
+      margin-right: 24px;
+    }
+    .disclaimer {
+      background: #21262d;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 40px;
+      font-size: 14px;
+      color: #8b949e;
+    }
+    .redacted {
+      background: #f85149;
+      color: #f85149;
+      padding: 0 4px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Clawdbot iMessage Security Assessment</h1>
+<p class="subtitle">Analysis of iMessage/SMS access capabilities via imsg skill | February 1, 2026</p>
+
+<div class="alert-box">
+  <h2>Finding: Full iMessage/SMS Access Without Per-Conversation Consent</h2>
+  <ul>
+    <li>The <code>imsg</code> skill provides <strong>unrestricted read access</strong> to all iMessage and SMS conversations</li>
+    <li>Messages are accessible in <strong>plaintext</strong> with no additional authentication beyond initial Full Disk Access</li>
+    <li>No audit trail of which conversations the AI agent accessed</li>
+    <li>Any prompt or skill can request message history from any contact</li>
+  </ul>
+</div>
+
+<h2>Technical Architecture</h2>
+
+<div class="architecture-diagram">
+<pre>
++------------------+      +------------------+      +------------------------+
+|   User Request   | ---> |    Clawdbot      | ---> |      imsg CLI          |
+|  (via WhatsApp)  |      |   (GPT-4o/etc)   |      |    (v0.4.0)            |
++------------------+      +------------------+      +------------------------+
+                                                              |
+                                                              v
+                                                    +------------------------+
+                                                    | ~/Library/Messages/    |
+                                                    |      chat.db           |
+                                                    |   (SQLite, ~20MB)      |
+                                                    +------------------------+
+                                                              |
+                                                              v
+                                                    +------------------------+
+                                                    |  ALL iMessage/SMS      |
+                                                    |  conversations on      |
+                                                    |  this Mac              |
+                                                    +------------------------+
+</pre>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span class="num">1</span>
+    Data Source: macOS Messages Database
+  </div>
+  <div class="section-content">
+    <p class="file-path">~/Library/Messages/chat.db</p>
+    <p>The <code>imsg</code> skill reads directly from macOS's native Messages database. This is the same database used by the Messages.app for iMessage and SMS synchronization.</p>
+    <h4 style="margin-top: 16px; color: #58a6ff;">Key Characteristics:</h4>
+    <ul style="margin: 12px 0 0 24px;">
+      <li><strong>No separate Clawdbot storage</strong> - imsg reads directly from the system database</li>
+      <li><strong>Real-time access</strong> - New messages appear immediately when synced to Messages.app</li>
+      <li><strong>Historical depth</strong> - All messages retained by Messages.app are accessible</li>
+      <li><strong>Cross-device sync</strong> - Messages synced via iCloud from iPhone/iPad are included</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Security Findings</h2>
+
+<div class="findings-grid">
+  <div class="finding-card">
+    <h4>No Per-Conversation Consent</h4>
+    <p>Once imsg has Full Disk Access, it can read any conversation. The user is never prompted when a specific chat is accessed.</p>
+  </div>
+  <div class="finding-card">
+    <h4>Plaintext Message Exposure</h4>
+    <p>All message content is returned in plaintext. Sensitive personal conversations are directly readable by the AI agent.</p>
+  </div>
+  <div class="finding-card">
+    <h4>No Access Audit Trail</h4>
+    <p>There is no logging of which conversations were accessed, when, or by which prompt/skill.</p>
+  </div>
+  <div class="finding-card">
+    <h4>Contact Discovery</h4>
+    <p>Phone numbers, email addresses, and iMessage handles of all contacts are enumerable via <code>imsg chats</code>.</p>
+  </div>
+</div>
+
+<h2>Verified Capabilities</h2>
+
+<div class="section">
+  <div class="section-header">
+    <span class="num">2</span>
+    Chat Enumeration
+  </div>
+  <div class="section-content">
+    <p><strong>Command:</strong> <code class="command">imsg chats --limit 10 --json</code></p>
+    <p>Returns a list of all conversations including:</p>
+    <ul style="margin: 12px 0 0 24px;">
+      <li>Phone numbers (e.g., +1XXXXXXXXXX)</li>
+      <li>iMessage email addresses</li>
+      <li>SMS service identifiers</li>
+      <li>Group chat participants</li>
+      <li>Chat IDs for history retrieval</li>
+    </ul>
+    <p style="margin-top: 16px;"><strong>Privacy Impact:</strong> <span class="risk-badge">HIGH</span></p>
+    <p>Complete contact list with identifiers is exposed. This reveals who the user communicates with.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span class="num">3</span>
+    Message History Retrieval
+  </div>
+  <div class="section-content">
+    <p><strong>Command:</strong> <code class="command">imsg history --chat-id [ID] --limit 20 --json</code></p>
+    <p>Returns full message content including:</p>
+    <ul style="margin: 12px 0 0 24px;">
+      <li>Complete message text in plaintext</li>
+      <li>Timestamps of each message</li>
+      <li>Sender identification (incoming vs outgoing)</li>
+      <li>Attachment references</li>
+      <li>Read receipts and delivery status</li>
+    </ul>
+    <p style="margin-top: 16px;"><strong>Example Output (redacted):</strong></p>
+    <pre>{
+  "messages": [
+    {
+      "id": 12345,
+      "text": "<span class="redacted">REDACTED</span>",
+      "date": "2026-01-30T15:42:00Z",
+      "is_from_me": false,
+      "handle": "+1<span class="redacted">XXXXXXXXXX</span>"
+    }
+  ]
+}</pre>
+    <p style="margin-top: 16px;"><strong>Privacy Impact:</strong> <span class="risk-badge">CRITICAL</span></p>
+    <p>Any conversation content is readable. Personal, sensitive, or confidential messages are fully exposed.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span class="num">4</span>
+    Attachment Access
+  </div>
+  <div class="section-content">
+    <p><strong>Flag:</strong> <code class="command">--attachments</code></p>
+    <p>When enabled, returns paths to attachment files (photos, videos, documents) stored locally.</p>
+    <p style="margin-top: 16px;"><strong>Privacy Impact:</strong> <span class="risk-badge">HIGH</span></p>
+    <p>Media files sent via iMessage can be located and potentially accessed.</p>
+  </div>
+</div>
+
+<h2>Permission Model Analysis</h2>
+
+<div class="section">
+  <div class="section-content">
+    <table>
+      <tr>
+        <th>Permission</th>
+        <th>Granted To</th>
+        <th>Scope</th>
+        <th>User Awareness</th>
+      </tr>
+      <tr>
+        <td>Full Disk Access</td>
+        <td>Terminal / iTerm</td>
+        <td>All files on disk</td>
+        <td>One-time system prompt</td>
+      </tr>
+      <tr>
+        <td>Messages Database Read</td>
+        <td>imsg CLI</td>
+        <td>All conversations</td>
+        <td>None (inherited from FDA)</td>
+      </tr>
+      <tr>
+        <td>Per-Conversation Access</td>
+        <td>N/A</td>
+        <td>N/A</td>
+        <td><span class="sensitive">No consent mechanism exists</span></td>
+      </tr>
+    </table>
+
+    <div class="warning-box">
+      <h3>Permission Gap</h3>
+      <p>macOS Full Disk Access is designed for backup tools and system utilities that need broad file access. It was not designed as an authorization mechanism for AI agents to read private conversations.</p>
+      <p style="margin-top: 12px;">The user grants Full Disk Access once to their terminal. They are never subsequently asked whether a specific AI agent should access their iMessage history. This creates a <strong>consent gap</strong> between user expectation and actual capability.</p>
+    </div>
+  </div>
+</div>
+
+<h2>Comparison: WhatsApp vs iMessage Access</h2>
+
+<div class="section">
+  <div class="section-content">
+    <table>
+      <tr>
+        <th>Aspect</th>
+        <th>WhatsApp (via wacli)</th>
+        <th>iMessage (via imsg)</th>
+      </tr>
+      <tr>
+        <td>Session Persistence</td>
+        <td>Stored in ~/.clawdbot/credentials/</td>
+        <td>Uses system Messages.app</td>
+      </tr>
+      <tr>
+        <td>Local Storage</td>
+        <td>Session keys, message cache</td>
+        <td>None (reads system DB directly)</td>
+      </tr>
+      <tr>
+        <td>QR Code Auth</td>
+        <td>Required for initial setup</td>
+        <td>Not required (uses FDA)</td>
+      </tr>
+      <tr>
+        <td>Message Scope</td>
+        <td>Limited to Clawdbot's session</td>
+        <td>ALL messages on the Mac</td>
+      </tr>
+      <tr>
+        <td>Cross-Device</td>
+        <td>Single device (WhatsApp Web)</td>
+        <td>All iCloud-synced devices</td>
+      </tr>
+    </table>
+
+    <p style="margin-top: 16px;"><strong>Analysis:</strong> iMessage access is arguably more concerning because it inherits access from a blanket system permission (Full Disk Access) rather than a Clawdbot-specific authentication flow. This means:</p>
+    <ul style="margin: 12px 0 0 24px;">
+      <li>Users may not realize granting FDA to their terminal enables AI message reading</li>
+      <li>The scope is broader (all synced messages vs. one WhatsApp account)</li>
+      <li>No Clawdbot-specific credential to revoke</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Risk Scenarios</h2>
+
+<div class="section">
+  <div class="section-header">
+    <span class="num">A</span>
+    Prompt Injection via Message Content
+  </div>
+  <div class="section-content">
+    <p>If an attacker sends a malicious message via iMessage, that message content could be read by Clawdbot when processing conversation history. While GPT-4o showed strong prompt injection resistance in our tests, this creates an attack surface where:</p>
+    <ul style="margin: 12px 0 0 24px;">
+      <li>Malicious instructions could be embedded in iMessage content</li>
+      <li>The AI might process these as part of context when asked about conversations</li>
+      <li>Alternative models with weaker safety training may be more vulnerable</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span class="num">B</span>
+    Social Engineering Information Gathering
+  </div>
+  <div class="section-content">
+    <p>An attacker who gains prompt access to Clawdbot could extract sensitive information from message history:</p>
+    <ul style="margin: 12px 0 0 24px;">
+      <li>"Summarize my recent conversations" - reveals communication patterns</li>
+      <li>"What did [contact] say about [topic]?" - extracts specific information</li>
+      <li>"Who have I been texting lately?" - reveals social connections</li>
+    </ul>
+    <p style="margin-top: 12px;">Even without prompt injection, a legitimate user with malicious intent could use Clawdbot to surveil a shared device's message history.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span class="num">C</span>
+    Third-Party Skill Abuse
+  </div>
+  <div class="section-content">
+    <p>If Clawdbot's skill system allows third-party or user-installed skills, a malicious skill could:</p>
+    <ul style="margin: 12px 0 0 24px;">
+      <li>Silently read message history in the background</li>
+      <li>Exfiltrate contact lists and conversation content</li>
+      <li>Combine with other skills (like email sending) for data exfiltration</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Recommendations</h2>
+
+<div class="section">
+  <div class="section-content">
+    <h4 style="color: #3fb950;">For Users:</h4>
+    <ul style="margin: 12px 0 24px 24px;">
+      <li>Understand that enabling imsg grants access to ALL your iMessage/SMS history</li>
+      <li>Consider whether the convenience is worth the privacy trade-off</li>
+      <li>Avoid using imsg on shared or multi-user Macs</li>
+      <li>Regularly review which applications have Full Disk Access</li>
+    </ul>
+
+    <h4 style="color: #3fb950;">For Clawdbot Developers:</h4>
+    <ul style="margin: 12px 0 24px 24px;">
+      <li>Implement per-conversation consent prompts before reading message history</li>
+      <li>Add access logging to track which conversations are accessed and when</li>
+      <li>Consider rate limiting or scope restrictions on message retrieval</li>
+      <li>Document the privacy implications clearly in skill descriptions</li>
+      <li>Provide granular permission controls (e.g., allow specific contacts only)</li>
+    </ul>
+
+    <h4 style="color: #3fb950;">For macOS:</h4>
+    <ul style="margin: 12px 0 0 24px;">
+      <li>Full Disk Access is too broad for modern AI agent use cases</li>
+      <li>A more granular permission model (per-app, per-data-type) would better match user expectations</li>
+      <li>Consider adding Messages-specific permissions similar to Contacts or Photos access</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Conclusion</h2>
+
+<p>The <code>imsg</code> skill provides powerful iMessage/SMS access that, while convenient, represents a significant privacy exposure. Unlike WhatsApp integration which requires explicit Clawdbot-specific authentication, iMessage access is inherited from macOS Full Disk Access with no additional consent layer.</p>
+
+<p style="margin-top: 16px;">Key concerns:</p>
+<ul style="margin: 16px 0 16px 24px;">
+  <li>All iMessage and SMS conversations are readable without per-conversation consent</li>
+  <li>No audit trail of AI access to private messages</li>
+  <li>Contact discovery reveals communication patterns</li>
+  <li>Attachment paths potentially expose private media</li>
+  <li>Permission model doesn't match user expectations for AI agent access</li>
+</ul>
+
+<p>This finding should be considered alongside the prompt injection resistance results. While GPT-4o prevented prompt-based extraction attempts, the capability itself exists and could be exploited through other means (malicious skills, social engineering, alternative models).</p>
+
+<div class="nav-links">
+  <a href="index.html">Main Security Report</a>
+  <a href="prompt-injection-tests.html">Prompt Injection Assessment</a>
+</div>
+
+<div class="disclaimer">
+  <strong>Testing Methodology</strong><br>
+  Assessment conducted February 1, 2026 on macOS with Clawdbot and imsg CLI v0.4.0. Verified capabilities through direct command execution and database inspection. No messages were exfiltrated; all examples shown are redacted or synthetic.
+</div>
+
+</body>
+</html>
